@@ -175,7 +175,8 @@ class PigChaseEnvironment(MalmoEnvironment):
                  state_builder,
                  actions=ENV_ACTIONS,
                  role=0, exp_name="",
-                 human_speed=False, randomize_positions=False):
+                 human_speed=False, randomize_positions=False,
+                 recording_path=None):
 
         assert isinstance(state_builder, MalmoStateBuilder)
 
@@ -187,7 +188,8 @@ class PigChaseEnvironment(MalmoEnvironment):
                                        '<MsPerTick>50</MsPerTick>',
                                        self._mission_xml)
         super(PigChaseEnvironment, self).__init__(self._mission_xml, actions,
-                                                  remotes, role, exp_name, True)
+                                                  remotes, role, exp_name, True,
+                                                  recording_path=recording_path)
 
         self._internal_symbolic_builder = PigChaseSymbolicStateBuilder()
         self._user_defined_builder = state_builder

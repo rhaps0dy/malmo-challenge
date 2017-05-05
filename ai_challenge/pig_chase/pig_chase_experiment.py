@@ -15,17 +15,17 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-import numpy as np
 import os
 import sys
-
 from argparse import ArgumentParser
 from datetime import datetime
 from os import path
 from threading import Thread, active_count
 from time import sleep
+import importlib
 
-from malmopy.agent import RandomAgent
+from environment import PigChaseSymbolicStateBuilder
+
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer
     from malmopy.visualization.tensorboard.cntk import CntkConverter
@@ -33,29 +33,20 @@ except ImportError:
     print('Cannot import tensorboard, using ConsoleVisualizer.')
     from malmopy.visualization import ConsoleVisualizer
 
-from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
-from agent import PigChaseChallengeAgent, FocusedAgent
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
-
 # Enforce path
 sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
-BASELINES_FOLDER = 'results/baselines/pig_chase/%s/%s'
-EPOCH_SIZE = 100
-
 
 def agent_factory(name, role, baseline_agent, clients, max_epochs,
-                  logdir, visualizer):
+                  logdir, visualizer, recording_path, epoch_size, AgentClass):
 
     assert len(clients) >= 2, 'Not enough clients (need at least 2)'
     clients = parse_clients_args(clients)
 
-    builder = PigChaseSymbolicStateBuilder()
-    env = PigChaseEnvironment(clients, builder, role=role,
-                              randomize_positions=True)
-
     if role == 0:
+        env = PigChaseEnvironment(clients, PigChaseSymbolicStateBuilder(), role=role,
+                                  randomize_positions=True, recording_path=None)
         agent = PigChaseChallengeAgent(name)
 
         if type(agent.current_agent) == RandomAgent:
@@ -63,15 +54,10 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         else:
             agent_type = PigChaseEnvironment.AGENT_TYPE_2
         obs = env.reset(agent_type)
-
         reward = 0
         agent_done = False
 
         while True:
-
-            # select an action
-            action = agent.act(obs, reward, agent_done, is_training=True)
-
             # reset if needed
             if env.done:
                 if type(agent.current_agent) == RandomAgent:
@@ -80,23 +66,24 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
                     agent_type = PigChaseEnvironment.AGENT_TYPE_2
                 obs = env.reset(agent_type)
 
+            # select an action
+            action = agent.act(obs, reward, agent_done, is_training=True)
             # take a step
             obs, reward, agent_done = env.do(action)
 
 
     else:
-
-        if baseline_agent == 'astar':
-            agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
-        else:
-            agent = RandomAgent(name, env.available_actions)
-
+        env = PigChaseEnvironment(clients, AgentClass.StateBuilder(), role=role,
+                                  randomize_positions=True,
+                                  recording_path=recording_path)
+        agent = AgentClass(name, env.actions, ENV_TARGET_NAMES[0], visualizer,
+                           device)
         obs = env.reset()
         reward = 0
         agent_done = False
         viz_rewards = []
 
-        max_training_steps = EPOCH_SIZE * max_epochs
+        max_training_steps = AgentClass.EPOCH_SIZE * max_epochs
         for step in range(1, max_training_steps+1):
 
             # check if env needs reset
@@ -140,28 +127,41 @@ def run_experiment(agents_def):
 
 
 if __name__ == '__main__':
-    arg_parser = ArgumentParser('Pig Chase baseline experiment')
-    arg_parser.add_argument('-t', '--type', type=str, default='astar',
-                            choices=['astar', 'random'],
-                            help='The type of baseline to run.')
+    arg_parser = ArgumentParser('Pig Chase experiment')
+    arg_parser.add_argument('-r', '--recording-path', type=str, default='',
+                            help='Path to record the file on')
+    arg_parser.add_argument('-a', '--agent', type=str,
+                            default='run_agents.Focused',
+                            help='Agent class to use')
     arg_parser.add_argument('-e', '--epochs', type=int, default=5,
                             help='Number of epochs to run.')
     arg_parser.add_argument('clients', nargs='*',
                             default=['127.0.0.1:10000', '127.0.0.1:10001'],
                             help='Minecraft clients endpoints (ip(:port)?)+')
+    arg_parser.add_argument('-d', '--device', type=int, default=-1,
+                            help='GPU device on which to run the experiment.')
     args = arg_parser.parse_args()
 
-    logdir = BASELINES_FOLDER % (args.type, datetime.utcnow().isoformat())
+    agent_module = args.agent.split(".")
+    mod = importlib.import_module(".".join(agent_module[:-1]))
+    AgentClass = getattr(mod, agent_module[-1])
+
+    logdir = AgentClass.log_dir(args, datetime.utcnow().isoformat())
     if 'malmopy.visualization.tensorboard' in sys.modules:
         visualizer = TensorboardVisualizer()
         visualizer.initialize(logdir, None)
     else:
         visualizer = ConsoleVisualizer()
 
-    agents = [{'name': agent, 'role': role, 'baseline_agent': args.type,
+    agents = [{'name': agent, 'role': role, 'AgentClass': AgentClass,
                'clients': args.clients, 'max_epochs': args.epochs,
-               'logdir': logdir, 'visualizer': visualizer}
+               'logdir': logdir, 'visualizer': visualizer,
+               'device': args.device}
               for role, agent in enumerate(ENV_AGENT_NAMES)]
 
+    if args.recording_path != "":
+        for a in agents:
+            # Only record on the controlled agent
+            if a['role'] == 1:
+                a['recording_path'] = args.recording_path
     run_experiment(agents)
-
