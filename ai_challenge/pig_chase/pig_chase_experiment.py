@@ -26,7 +26,9 @@ from threading import Thread, active_count
 from time import sleep
 import importlib
 
-from environment import PigChaseSymbolicStateBuilder
+from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
+from agent import PigChaseChallengeAgent, PigChaseQLearnerAgent, RandomAgent
+from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer
@@ -40,8 +42,8 @@ sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
 
-def agent_factory(name, role, baseline_agent, clients, max_epochs,
-                  logdir, visualizer, recording_path, epoch_size, AgentClass):
+def agent_factory(name, role, AgentClass, clients, max_epochs,
+                  logdir, visualizer, recording_path, device):
 
     assert len(clients) >= 2, 'Not enough clients (need at least 2)'
     clients = parse_clients_args(clients)
@@ -78,7 +80,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         env = PigChaseEnvironment(clients, AgentClass.StateBuilder(), role=role,
                                   randomize_positions=True,
                                   recording_path=recording_path)
-        agent = AgentClass(name, env.actions, ENV_TARGET_NAMES[0], visualizer,
+        agent = AgentClass(name, env.available_actions, ENV_TARGET_NAMES[0], visualizer,
                            device)
         obs = env.reset()
         reward = 0
@@ -158,7 +160,7 @@ if __name__ == '__main__':
     agents = [{'name': agent, 'role': role, 'AgentClass': AgentClass,
                'clients': args.clients, 'max_epochs': args.epochs,
                'logdir': logdir, 'visualizer': visualizer,
-               'device': args.device}
+               'recording_path': None, 'device': args.device}
               for role, agent in enumerate(ENV_AGENT_NAMES)]
 
     if args.recording_path != "":
