@@ -1,3 +1,12 @@
+#pragma once
+
+#include <vector>
+#include <cmath>
+#include <cassert>
+#include <iostream>
+#include <utility>
+
+using namespace std;
 
 typedef float Float;
 
@@ -57,7 +66,7 @@ struct Node {
 
 	// State of the world
 	int t;
-	Pig pig
+	Pig pig;
 	Player ps[2];
 	static vector<pair<Float, Strategy> > p1_strats;
 
@@ -66,7 +75,7 @@ protected:
 
 public:
 	Node(const Node &_parent, int x, int y, Direction d, Action _prev_a):
-		parent(_parent), prev_action(_prev_a), t(parent.t+1), pig(parent.pig) {
+		parent(_parent), is_final(false), prev_action(_prev_a), t(parent.t+1), pig(parent.pig) {
 			const int role=t%2;
 			if(role==1 && ((x == 0) && (y == 3) || (x == 6) && (y == 3) || t >= MAX_T)) {
 				is_final = true;
@@ -103,12 +112,12 @@ public:
 			break;
 		}
 		children.reserve(N_ACTIONS);
-		children.emplace_back(*this, ps[role].x, ps[role].y, (ps[role].d+4-1)%4, A_LEFT, t+1);
-		children.emplace_back(*this, ps[role].x, ps[role].y, (ps[role].d+1)%4, A_RIGHT, t+1);
+		children.emplace_back(*this, ps[role].x, ps[role].y, (Direction)((ps[role].d+4-1)%4), A_LEFT);
+		children.emplace_back(*this, ps[role].x, ps[role].y, (Direction)((ps[role].d+1)%4), A_RIGHT);
 		dx += ps[role].x;
 		dy += ps[role].y;
 		if(WALLS[dy][dx]) {
-			children.emplace_back(*this, dx, dy, ps[role].d, A_FRONT, t+1);
+			children.emplace_back(*this, dx, dy, ps[role].d, A_FRONT);
 		}
 		return children;
 	}
