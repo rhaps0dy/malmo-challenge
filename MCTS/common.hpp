@@ -5,7 +5,9 @@ typedef float Float;
 // The map of the world; 1 are places where entities can move to, 0 are fences
 typedef float Float;
 
-const bool WALLS[7][9] = {
+constexpr int WALLS_W = 9;
+constexpr int WALLS_H = 7;
+const bool WALLS[WALLS_H][WALLS_W] = {
 	{0,0,0,0,0,0,0,0,0},
 	{0,0,1,1,1,1,1,0,0},
 	{0,0,1,0,1,0,1,0,0},

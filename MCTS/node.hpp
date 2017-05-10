@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cassert>
+#include <iostream>
 
 #include "common.hpp"
 #include "strategy.hpp"
@@ -10,8 +11,9 @@ using namespace std;
 
 template<typename T>
 class Node {
+	friend int main(int argc, char *argv[]);
 protected:
-	const T& parent;
+	const T *parent;
 	Action prev_action;
 	bool is_final;
 
@@ -22,22 +24,24 @@ protected:
 	vector<T> children;
 
 public:
-	Node(const T &_parent, int x, int y, Direction d, Action _prev_a) :
-		parent(_parent), prev_action(_prev_a), is_final(false), t(parent.t+1),
-		pig(parent.pig)
+	Node(const T *_parent, int x, int y, Direction d, Action _prev_a) :
+		parent(_parent), prev_action(_prev_a), is_final(false), t(parent->t+1),
+		pig(parent->pig)
 	{
+		assert(_parent != static_cast<T*>(NULL));
 		if(pig_trapped() || in_exit(1)) // implicit "&& role==1"
 			is_final = true;
 	}
 
 	Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 			int _P_x, int _P_y) :
-		parent(*dynamic_cast<T*>(this)), is_final(false), prev_action(A_FRONT), t(0)
+		parent(static_cast<T*>(NULL)), is_final(false), prev_action(A_FRONT), t(0)
 	{
 		ps[0].x = x0; ps[0].y = y0; ps[0].d = d0;
 		ps[1].x = x1; ps[1].y = y1; ps[1].d = d1;
 		pig.x = _P_x; pig.y = _P_y;
 	}
+	virtual ~Node() {};
 
 	vector<T> &get_children()
 	{
@@ -62,14 +66,14 @@ public:
 			break;
 		}
 		children.reserve(N_ACTIONS);
-		children.emplace_back(*dynamic_cast<T*>(this), ps[role].x, ps[role].y,
-							static_cast<Direction>((ps[role].d+4-1)%4), A_LEFT);
-		children.emplace_back(*dynamic_cast<T*>(this), ps[role].x, ps[role].y,
-							static_cast<Direction>((ps[role].d+1)%4), A_RIGHT);
+		children.push_back(T(dynamic_cast<T*>(this), ps[role].x, ps[role].y,
+							 static_cast<Direction>((ps[role].d+4-1)%4), A_LEFT));
+		children.push_back(T(dynamic_cast<T*>(this), ps[role].x, ps[role].y,
+							 static_cast<Direction>((ps[role].d+1)%4), A_RIGHT));
 		dx += ps[role].x;
 		dy += ps[role].y;
 		if(WALLS[dy][dx]) {
-			children.emplace_back(*dynamic_cast<T*>(this), dx, dy, ps[role].d, A_FRONT);
+			children.push_back(T(dynamic_cast<T*>(this), dx, dy, ps[role].d, A_FRONT));
 		}
 		return children;
 	}
@@ -91,5 +95,21 @@ public:
 			(ps[role].x == 7 && ps[role].y == 3);
 	}
 
-	virtual ~Node() {};
+	void print() const {
+		static char str[WALLS_W+1] = {'\0'};
+		for(int y=0; y<WALLS_H; y++) {
+			for(int x=0; x<WALLS_W; x++)
+				str[x] = (WALLS[y][x] ? ' ' : '#');
+			for(int i=0; i<2; i++) {
+				if(y == ps[i].y)
+					str[ps[i].x] = (ps[i].d == D_NORTH ? '^' :
+								   (ps[i].d == D_EAST ? '>' :
+									(ps[i].d == D_SOUTH ? 'v' : '<')));
+			}
+			if(y==pig.y)
+				str[pig.x] = '.';
+			puts(str);
+		}
+		printf("t = %d\n", t);
+	}
 };

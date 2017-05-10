@@ -15,10 +15,10 @@ protected:
 	int n_visits;
 
 public:
-	UCTNode(const UCTNode &_parent, int x, int y, Direction d, Action _prev_a);
+	UCTNode(const UCTNode *_parent, int x, int y, Direction d, Action _prev_a);
 	UCTNode(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 			int _P_x, int _P_y);
 	Float value(const Float c) const;
-	UCTNode &simulate_path(Float constant=1.);
+	UCTNode *simulate_path(Float constant=1.);
 	virtual ~UCTNode() {};
 };

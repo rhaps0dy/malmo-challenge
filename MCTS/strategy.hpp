@@ -20,7 +20,7 @@ public:
 	StrategyChooser(StrategyChooser const&) = delete;
 	void operator=(StrategyChooser const&) = delete;
 
-	StrategyChooser() : generator(), uniform(0.0, 1.0), p1_strats() {}
+	StrategyChooser();
 	Strategy random_strat();
 };
 
