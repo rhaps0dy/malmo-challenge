@@ -3,3 +3,5 @@ CMakeFiles
 cmake_install.cmake
 main
 Makefile
+.DS_Store
+_all.cpp
