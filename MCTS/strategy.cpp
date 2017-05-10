@@ -1,4 +1,5 @@
 #include <cassert>
+#include <chrono>
 
 #include "common.hpp"
 #include "strategy.hpp"
@@ -16,13 +17,16 @@ Strategy StrategyChooser::random_strat()
 	assert(false);
 }
 
-Action StrategyLeft(Player p1, Player p2, int t, Pig pig) { return A_LEFT; }
-Action StrategyRight(Player p1, Player p2, int t, Pig pig) { return A_RIGHT; }
-Action StrategyFront(Player p1, Player p2, int t, Pig pig) { return A_FRONT; }
-
-StrategyChooser::StrategyChooser() : generator(), uniform(0.0, 1.0), p1_strats()
-{
-	p1_strats.push_back(make_pair(1., StrategyLeft));
-	//p1_strats.push_back(make_pair(1./3., StrategyRight));
-	//p1_strats.push_back(make_pair(1.-p1_strats.at(1).first-p1_strats.at(0).first, StrategyRight));
+Action StrategyLeft(UCTNode &start) { return A_LEFT; }
+Action StrategyRight(UCTNode &start) { return A_RIGHT; }
+Action StrategyFront(UCTNode &start) {
+	if(start.get_children().size() > 2)
+		return A_FRONT;
+	return A_LEFT;
 }
+
+
+StrategyChooser::StrategyChooser() :
+	generator(chrono::system_clock::now().time_since_epoch().count()),
+	uniform(0.0, 1.0), p1_strats{
+	{1./3., StrategyLeft}, {1./3., StrategyRight}, {1., StrategyFront}} {}

@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "common.hpp"
-#include "strategy.hpp"
 
 using namespace std;
 

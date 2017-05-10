@@ -1,4 +1,5 @@
 #include "uct.hpp"
+#include "strategy.hpp"
 
 UCTNode::UCTNode(const UCTNode *_parent, int x, int y, Direction d, Action _prev_a) :
 	Node(_parent, x, y, d, _prev_a), value_sum(0.0), n_visits(0) {}
@@ -34,8 +35,7 @@ UCTNode *UCTNode::simulate_path(Float constant) {
 			}
 			current = &current->get_children().at(best_i);
 		} else {
-			Action a = strategy(current->ps[0], current->ps[1], current->t,
-								 current->pig);
+			Action a = strategy(*current);
 			current = &current->get_children().at(static_cast<int>(a));
 		}
 	}

@@ -2,10 +2,11 @@
 #include <random>
 
 #include "common.hpp"
+#include "uct.hpp"
 
 using namespace std;
 
-typedef Action (*Strategy)(Player, Player, int, Pig);
+typedef Action (*Strategy)(UCTNode&);
 
 class StrategyChooser {
 	default_random_engine generator;
@@ -24,6 +25,6 @@ public:
 	Strategy random_strat();
 };
 
-Action StrategyLeft(Player p1, Player p2, int t, Pig pig);
-Action StrategyRight(Player p1, Player p2, int t, Pig pig);
-Action StrategyFront(Player p1, Player p2, int t, Pig pig);
+Action StrategyLeft(UCTNode &start);
+Action StrategyRight(UCTNode &start);
+Action StrategyFront(UCTNode &start);

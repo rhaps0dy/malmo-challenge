@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "common.hpp"
-#include "strategy.hpp"
 #include "node.hpp"
 
 using namespace std;
