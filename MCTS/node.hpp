@@ -29,8 +29,15 @@ public:
 		pig(parent->pig)
 	{
 		assert(_parent != static_cast<T*>(NULL));
-		if(pig_trapped() || in_exit(1)) // implicit "&& role==1"
+		assert(t<=MAX_T);
+		const int role = t % 2;
+		if(role==1 && (pig_trapped() || in_exit(1) || in_exit(0) || t>=MAX_T))
 			is_final = true;
+		const int p_role = parent->t%2;
+		ps[p_role].x = x;
+		ps[p_role].y = y;
+		ps[p_role].d = d;
+		ps[role] = parent->ps[role];
 	}
 
 	Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
@@ -83,13 +90,14 @@ public:
 			for(int dy=-1; dy<2; dy+=2) {
 				const int y = pig.y+dy;
 				const int x = pig.x+dx;
-				if(!WALLS[y][x] &&
+				if(WALLS[y][x] &&
 				((ps[0].x != x) || (ps[0].y != y)) &&
 				((ps[1].x != x) || (ps[1].y != y)))
 					return false;
 			}
 		return true;
 	}
+
 	bool in_exit(int role) const {
 		return (ps[role].x == 1 && ps[role].y == 3) ||
 			(ps[role].x == 7 && ps[role].y == 3);
@@ -110,6 +118,7 @@ public:
 				str[pig.x] = '.';
 			puts(str);
 		}
-		printf("t = %d\n", t);
+		printf("t = %d, prev_action = %d, is_final = ", t, prev_action);
+		cout << is_final << ' ' << pig_trapped() << endl;
 	}
 };

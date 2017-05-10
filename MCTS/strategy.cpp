@@ -22,7 +22,7 @@ Action StrategyFront(Player p1, Player p2, int t, Pig pig) { return A_FRONT; }
 
 StrategyChooser::StrategyChooser() : generator(), uniform(0.0, 1.0), p1_strats()
 {
-	p1_strats.push_back(make_pair(1./3., StrategyLeft));
-	p1_strats.push_back(make_pair(1./3., StrategyRight));
-	p1_strats.push_back(make_pair(1.-p1_strats.at(1).first-p1_strats.at(0).first, StrategyRight));
+	p1_strats.push_back(make_pair(1., StrategyLeft));
+	//p1_strats.push_back(make_pair(1./3., StrategyRight));
+	//p1_strats.push_back(make_pair(1.-p1_strats.at(1).first-p1_strats.at(0).first, StrategyRight));
 }

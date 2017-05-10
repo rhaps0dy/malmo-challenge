@@ -26,7 +26,7 @@ constexpr int N_ACTIONS = 3;
 
 // Time horizon after which the game ends.
 // 25 player moves and 25 environment (other player + pig) moves
-constexpr int MAX_T = 25*2;
+constexpr int MAX_T = 25*2-1;
 
 enum Direction {
 	D_NORTH = 0,

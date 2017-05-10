@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 {
 	UCTNode root(2,1,D_NORTH, 5,1,D_SOUTH, 5, 3);
 	const UCTNode *fnode = root.simulate_path();
-	while(fnode != &root) {
+	while(fnode != NULL) {
 		fnode->print();
 		fnode = fnode->parent;
 	}
