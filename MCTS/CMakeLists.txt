@@ -7,7 +7,7 @@ function(cat IN_FILE OUT_FILE)
 endfunction()
 
 file(WRITE _all.cpp "")
-set(CONCAT_CXX_FILES main.cpp uct.cpp strategy.cpp)
+set(CONCAT_CXX_FILES main.cpp node.cpp uct.cpp strategy.cpp)
 
 # Call the "cat" function for each input file
 foreach(CONCAT_CXX_FILE ${CONCAT_CXX_FILES})

@@ -1,12 +1,13 @@
 #pragma once
+
 #include <random>
 
 #include "common.hpp"
-#include "uct.hpp"
+#include "node.hpp"
 
 using namespace std;
 
-typedef Action (*Strategy)(UCTNode&);
+typedef Action (*Strategy)(Node&);
 
 class StrategyChooser {
 	default_random_engine generator;
@@ -25,6 +26,6 @@ public:
 	Strategy random_strat();
 };
 
-Action StrategyLeft(UCTNode &start);
-Action StrategyRight(UCTNode &start);
-Action StrategyFront(UCTNode &start);
+Action StrategyLeft(Node &start);
+Action StrategyRight(Node &start);
+Action StrategyFront(Node &start);

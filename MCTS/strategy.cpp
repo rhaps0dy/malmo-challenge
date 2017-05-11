@@ -17,9 +17,9 @@ Strategy StrategyChooser::random_strat()
 	assert(false);
 }
 
-Action StrategyLeft(UCTNode &start) { return A_LEFT; }
-Action StrategyRight(UCTNode &start) { return A_RIGHT; }
-Action StrategyFront(UCTNode &start) {
+Action StrategyLeft(Node &start) { return A_LEFT; }
+Action StrategyRight(Node &start) { return A_RIGHT; }
+Action StrategyFront(Node &start) {
 	if(start.get_children().size() > 2)
 		return A_FRONT;
 	return A_LEFT;

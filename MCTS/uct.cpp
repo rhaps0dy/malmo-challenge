@@ -1,33 +1,26 @@
 #include "uct.hpp"
 #include "strategy.hpp"
 
-UCTNode::UCTNode(const UCTNode *_parent, int x, int y, Direction d, Action _prev_a) :
-	Node(_parent, x, y, d, _prev_a), value_sum(0.0), n_visits(0) {}
-
-UCTNode::UCTNode(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
-				 int _P_x, int _P_y) :
-	Node(x0, y0, d0, x1, y1, d1, _P_x, _P_y) {}
-
-Float UCTNode::value(const Float c) const {
-	if(is_final) {
-		Float v = -(t/2);
-		if(pig_trapped()) return v+25.;
-		if(in_exit(0)) return v+5.;
+Float uct_value(const Node &n, const Float c) {
+	if(n.is_final) {
+		Float v = -(n.t/2);
+		if(n.pig_trapped()) return v+25.;
+		if(n.in_exit(0)) return v+5.;
 		return v;
 	}
-	return value_sum/n_visits + c*sqrt(2.*log(parent->n_visits)/n_visits);
+	return n.value_sum/n.n_visits + c*sqrt(2.*log(n.parent.n_visits)/n.n_visits);
 }
 
-UCTNode *UCTNode::simulate_path(Float constant) {
+Node &simulate_path(Node &_current, Float constant) {
 	const Strategy strategy = StrategyChooser::get().random_strat();
-	UCTNode *current = this;
+	Node *current = &_current;
 	while(!current->is_final) {
 		const int role = current->t%2;
 		if(role == 0) {
 			size_t i=0, best_i=0;
-			Float max_val = current->get_children().at(0).value(constant);
+			Float max_val = uct_value(current->get_children().at(0), constant);
 			for(i=0; i<current->get_children().size(); i++) {
-				auto val = current->get_children().at(i).value(constant);
+				auto val = uct_value(current->get_children().at(i), constant);
 				if(val > max_val) {
 					max_val = val;
 					best_i = i;
@@ -39,5 +32,5 @@ UCTNode *UCTNode::simulate_path(Float constant) {
 			current = &current->get_children().at(static_cast<int>(a));
 		}
 	}
-	return current;
+	return *current;
 }

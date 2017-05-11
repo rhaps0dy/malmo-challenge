@@ -12,11 +12,11 @@
 
 int main(int argc, char *argv[])
 {
-	UCTNode root(2,1,D_NORTH, 5,1,D_SOUTH, 5, 3);
-	const UCTNode *fnode = root.simulate_path();
-	while(fnode != NULL) {
+	Node root(2,1,D_NORTH, 5,1,D_SOUTH, 5, 3);
+	const Node *fnode = &simulate_path(root, 2.0);
+	while(fnode != &fnode->parent) {
 		fnode->print();
-		fnode = fnode->parent;
+		fnode = &fnode->parent;
 	}
 	return 0;
 }
