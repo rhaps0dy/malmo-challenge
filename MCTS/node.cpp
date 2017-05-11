@@ -102,3 +102,16 @@ void Node::print() const {
 	printf("t = %d, prev_action = %d, is_final = ", t, prev_action);
 	cout << is_final << " pig_trapped = " << pig_trapped() << endl;
 }
+
+int Node::get_serialization() const {
+	int serial = 0;
+	serial |= pig.y;
+	serial |= pig.x << 4;
+	serial |= ps[1].d << 8;
+	serial |= ps[1].y << 10;
+	serial |= ps[1].x << 14;
+	serial |= ps[0].d << 18;
+	serial |= ps[0].y << 20;
+	serial |= ps[0].x << 24;
+	return serial;
+}
