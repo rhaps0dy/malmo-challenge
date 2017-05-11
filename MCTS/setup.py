@@ -13,5 +13,5 @@ setup(
     ext_modules=[Extension('tsearch.libuct',
                            ['node.cpp', 'strategy.cpp', 'uct.cpp'],
                            define_macros=[('NDEBUG', '1')],
-                           extra_compile_args=['-O3', '-flto'],
+                           extra_compile_args=['-O3', '-flto', '-std=c++14'],
                            extra_link_args=['-O3', '-flto'],)])
