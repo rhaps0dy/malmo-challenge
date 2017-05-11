@@ -3,7 +3,7 @@
 
 #include "node.hpp"
 
-Node::Node(const Node &_parent, int x, int y, Direction d, Action _prev_a) :
+Node::Node(Node &_parent, int x, int y, Direction d, Action _prev_a) :
 	parent(_parent), prev_action(_prev_a), is_final(false), value_sum(0.0),
 	n_visits(0), t(parent.t+1), pig(parent.pig)
 {
