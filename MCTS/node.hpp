@@ -30,5 +30,4 @@ public:
 	bool pig_trapped() const;
 	bool in_exit(int role) const;
 	void print() const;
-	bool is_root() const { return &parent == this; }
 };

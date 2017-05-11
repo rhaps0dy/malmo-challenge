@@ -1,5 +1,6 @@
 #include <cassert>
 #include <iostream>
+#include <cstdio>
 
 #include "node.hpp"
 
@@ -9,13 +10,15 @@ Node::Node(Node &_parent, int x, int y, Direction d, Action _prev_a) :
 {
 	assert(t<=MAX_T);
 	const int role = t % 2;
-	if(role==1 && (pig_trapped() || in_exit(1) || in_exit(0) || t>=MAX_T))
-		is_final = true;
 	const int p_role = parent.t%2;
 	ps[p_role].x = x;
 	ps[p_role].y = y;
 	ps[p_role].d = d;
 	ps[role] = parent.ps[role];
+
+	// role == 1 -> the environment has the final move
+	if(role==1 && (pig_trapped() || in_exit(1) || in_exit(0) || t>=MAX_T))
+		is_final = true;
 }
 
 Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
@@ -64,15 +67,15 @@ vector<Node> &Node::get_children()
 }
 
 bool Node::pig_trapped() const {
-	for(int dx=-1; dx<2; dx+=2)
-		for(int dy=-1; dy<2; dy+=2) {
-			const int y = pig.y+dy;
-			const int x = pig.x+dx;
-			if(WALLS[y][x] &&
-			((ps[0].x != x) || (ps[0].y != y)) &&
-			((ps[1].x != x) || (ps[1].y != y)))
-				return false;
-		}
+	static const int offsets[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+	for(size_t i=0; i<4; i++) {
+		const int y = pig.y+offsets[i][1];
+		const int x = pig.x+offsets[i][0];
+		if(WALLS[y][x] &&
+		   ((ps[0].x != x) || (ps[0].y != y)) &&
+		   ((ps[1].x != x) || (ps[1].y != y)))
+			return false;
+	}
 	return true;
 }
 
@@ -97,5 +100,5 @@ void Node::print() const {
 		puts(str);
 	}
 	printf("t = %d, prev_action = %d, is_final = ", t, prev_action);
-	cout << is_final << ' ' << pig_trapped() << endl;
+	cout << is_final << " pig_trapped = " << pig_trapped() << endl;
 }

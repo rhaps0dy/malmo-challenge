@@ -8,11 +8,11 @@
 
 using namespace std;
 
-typedef Float (*UtilityFun)(Node &);
+typedef Float (*RewardFun)(const Node &);
 
-Float pig_chase_value(Node &n);
+Float pig_chase_reward(const Node &n);
 Node &simulate_path(Node &current, Float constant);
-Action uct_best_action(Node &root, int budget, UtilityFun f, Float constant);
+Action uct_best_action(Node &root, int budget, RewardFun f, Float constant);
 
 extern "C" {
 	Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,

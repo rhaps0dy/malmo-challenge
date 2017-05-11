@@ -5,3 +5,4 @@ main
 Makefile
 .DS_Store
 _all.cpp
+*.so

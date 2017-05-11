@@ -1,7 +1,5 @@
 #pragma once
 
-#include <random>
-
 #include "common.hpp"
 #include "node.hpp"
 
@@ -10,8 +8,6 @@ using namespace std;
 typedef Action (*Strategy)(Node&);
 
 class StrategyChooser {
-	default_random_engine generator;
-	uniform_real_distribution<Float> uniform;
 	vector<pair<Float, Strategy> > p1_strats;
 
 public:
@@ -23,7 +19,8 @@ public:
 	void operator=(StrategyChooser const&) = delete;
 
 	StrategyChooser();
-	Strategy random_strat();
+	static Strategy random_strat();
+	static void update_probabilities(Float probs[], size_t n_probs);
 };
 
 Action StrategyLeft(Node &start);
