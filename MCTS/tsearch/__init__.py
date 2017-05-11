@@ -10,7 +10,7 @@ D_EAST = 1
 D_SOUTH = 2
 D_WEST = 3
 
-uct = cdll.LoadLibrary(os.path.join(os.path.dirname(__file__), 'libmcts.so'))
+uct = cdll.LoadLibrary(os.path.join(os.path.dirname(__file__), 'libuct.so'))
 
 Float_size = 'float'
 if Float_size == 'float':
