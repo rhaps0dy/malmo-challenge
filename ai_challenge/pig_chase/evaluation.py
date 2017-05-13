@@ -82,13 +82,20 @@ class PigChaseEvaluator(object):
         except Exception as e:
             print('Unable to save the results: %s' % e)
 
-    def run(self):
+    def run(self, agent):
         from multiprocessing import Process
 
         env = PigChaseEnvironment(self._clients, self._state_builder,
                                   role=1, randomize_positions=True)
         print('==================================')
         print('Starting evaluation of Agent @100k')
+
+        def run_challenge_agent(clients):
+            builder = PigChaseSymbolicStateBuilder()
+            env = PigChaseEnvironment(clients, builder, role=0,
+                                    randomize_positions=True)
+            #agent = PigChaseChallengeAgent(ENV_AGENT_NAMES[0])
+            agent_loop(agent, env, None)
 
         p = Process(target=run_challenge_agent, args=(self._clients,))
         p.start()
@@ -104,14 +111,6 @@ class PigChaseEvaluator(object):
         sleep(5)
         agent_loop(self._agent_500k, env, self._accumulators['500k'])
         p.terminate()
-
-
-def run_challenge_agent(clients):
-    builder = PigChaseSymbolicStateBuilder()
-    env = PigChaseEnvironment(clients, builder, role=0,
-                              randomize_positions=True)
-    agent = PigChaseChallengeAgent(ENV_AGENT_NAMES[0])
-    agent_loop(agent, env, None)
 
 
 def agent_loop(agent, env, metrics_acc):
