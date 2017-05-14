@@ -265,3 +265,6 @@ __pycache__/
 
 # Library
 *.pyd
+
+*.pkl
+*.egg-info

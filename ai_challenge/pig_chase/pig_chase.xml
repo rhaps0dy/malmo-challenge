@@ -18,7 +18,7 @@
     </About>
 
     <ModSettings>
-        <MsPerTick>4</MsPerTick>
+        <MsPerTick>50</MsPerTick>
     </ModSettings>
 
     <ServerSection>
@@ -158,7 +158,7 @@
                 <Mob type="Pig" reward="25.0" distribution="Agent_1:1 Agent_2:1" oneshot="true" global="true"/>
             </RewardForCatchingMob>
             <RewardForSendingCommand reward="-1"/>
-			<AgentQuitFromReachingCommandQuota total="2000" description="command_quota_reached"/>
+			<AgentQuitFromReachingCommandQuota total="20000" description="command_quota_reached"/>
             <AgentQuitFromTouchingBlockType>
                 <Block type="lapis_block" description="Agent_2_defaulted"/>
             </AgentQuitFromTouchingBlockType>
