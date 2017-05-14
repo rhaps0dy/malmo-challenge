@@ -1,21 +1,24 @@
 #include <cassert>
 #include <iostream>
 #include <cstdio>
+#include <utility>
 
 #include "node.hpp"
 
+
+const array<Action, N_ACTIONS> Node::actions = {A_FRONT, A_LEFT, A_RIGHT};
+
 Node::Node(Node &_parent, int x, int y, Direction d, Action _prev_a) :
-	parent(_parent), prev_action(_prev_a), is_final(false), value_sum(0.0),
-	n_visits(0), t(parent.t+1), pig(parent.pig)
+	parent(_parent), prev_action(_prev_a), is_final(false), value_sum{0.,0.,0.},
+	n_visits{0,0,0}, total_n_visits(0), t(parent.t+1), pig(parent.pig),
+	ps(parent.t%2 == 0 ?
+	   array<Player, 2>{Player(x, y, d), parent.ps[1]} :
+	   array<Player, 2>{parent.ps[0], Player(x, y, d)}),
+	children(),
+	children_nopigmove{children.end(), children.end(), children.end()}
 {
 	assert(t<=MAX_T);
 	const int role = t % 2;
-	const int p_role = parent.t%2;
-	ps[p_role].x = x;
-	ps[p_role].y = y;
-	ps[p_role].d = d;
-	ps[role] = parent.ps[role];
-
 	// role == 1 -> the environment has the final move
 	if(role==1 && (pig_trapped() || in_exit(1) || in_exit(0) || t>=MAX_T))
 		is_final = true;
@@ -23,47 +26,41 @@ Node::Node(Node &_parent, int x, int y, Direction d, Action _prev_a) :
 
 Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 		int _P_x, int _P_y) :
-	parent(*this), prev_action(A_FRONT), is_final(false), value_sum(0.0),
-	n_visits(0), t(0)
+	parent(*this), prev_action(A_FRONT), is_final(false), value_sum{0.,0.,0.},
+	n_visits{0,0,0}, total_n_visits(0), t(0), pig{_P_x, _P_y},
+	ps{Player(x0, y0, d0), Player(x1, y1, d1)}
 {
-	ps[0].x = x0; ps[0].y = y0; ps[0].d = d0;
-	ps[1].x = x1; ps[1].y = y1; ps[1].d = d1;
-	pig.x = _P_x; pig.y = _P_y;
 }
 
-vector<Node> &Node::get_children()
-{
-	assert(!is_final);
-	if(children.size() != 0)
-		return children;
+Node &Node::get_child(const Action action, bool pig_move) {
+	if(children_nopigmove[action] == children.end()) {
+		const int role = t%2;
+		int x=ps[role].x, y=ps[role].y, d=ps[role].d;
+		if(action == A_FRONT) {
+			switch(ps[role].d) {
+			case D_NORTH: if(WALLS[y-1][x]) { y -= 1; } break;
+			case D_SOUTH: if(WALLS[y+1][x]) { y += 1; } break;
+			case D_WEST: if(WALLS[y][x-1]) { x -= 1; } break;
+			case D_EAST: if(WALLS[y][x+1]) { x += 1; } break;
+			}
+		} else if(action == A_LEFT) {
+			d = (d+4-1)%4;
+		} else {
+			d = (d+1)%4;
+		}
+		Node child(*this, x, y, static_cast<Direction>(d), action);
+		auto ret = children.emplace(make_pair(child.get_serialization(), child));
+		children_nopigmove.at(action) = ret.first;
+	}
 
-	const int role = t%2;
-	int dx=0, dy=0;
-	switch(ps[role].d) {
-	case D_NORTH:
-		dy=-1;
-		break;
-	case D_SOUTH:
-		dy=1;
-		break;
-	case D_WEST:
-		dx=-1;
-		break;
-	case D_EAST:
-		dx=1;
-		break;
-	}
-	children.reserve(N_ACTIONS);
-	children.emplace_back(*this, ps[role].x, ps[role].y,
-							static_cast<Direction>((ps[role].d+4-1)%4), A_LEFT);
-	children.emplace_back(*this, ps[role].x, ps[role].y,
-							static_cast<Direction>((ps[role].d+1)%4), A_RIGHT);
-	dx += ps[role].x;
-	dy += ps[role].y;
-	if(WALLS[dy][dx]) {
-		children.emplace_back(*this, dx, dy, ps[role].d, A_FRONT);
-	}
-	return children;
+	if(!pig_move)
+		return children_nopigmove.at(action)->second;
+
+	Node base(children_nopigmove.at(action)->second);
+	// base.pig.x = something; modify
+	auto ret = children.insert(make_pair(base.get_serialization(), base));
+	// return object if it already existed
+	return ret.first->second;
 }
 
 bool Node::pig_trapped() const {
@@ -103,15 +100,14 @@ void Node::print() const {
 	cout << is_final << " pig_trapped = " << pig_trapped() << endl;
 }
 
-int Node::get_serialization() const {
-	int serial = 0;
-	serial |= pig.y;
-	serial |= pig.x << 4;
-	serial |= ps[1].d << 8;
-	serial |= ps[1].y << 10;
-	serial |= ps[1].x << 14;
-	serial |= ps[0].d << 18;
-	serial |= ps[0].y << 20;
-	serial |= ps[0].x << 24;
+NodeSeri Node::get_serialization() const {
+	static const int serial = (pig.y
+		| (pig.x << 4)
+		| (ps[0].d << 8)
+		| (ps[0].y << 10)
+		| (ps[0].x << 14)
+		| (ps[1].d << 18)
+		| (ps[1].y << 20)
+		| (ps[1].x << 24));
 	return serial;
 }

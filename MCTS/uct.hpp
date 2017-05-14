@@ -17,5 +17,5 @@ Action uct_best_action(Node &root, int budget, RewardFun f, Float constant);
 extern "C" {
 	Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 						   Direction d1, int P_x, int P_y, int budget, Float c,
-						   Float strat_probs[], size_t n_strats);
+						   Float strat_probs[], size_t n_probs);
 }

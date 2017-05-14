@@ -1,34 +1,46 @@
 #pragma once
 
-#include <vector>
+#include <map>
+#include <array>
 
 #include "common.hpp"
 
 using namespace std;
 
+typedef int NodeSeri;
+
 struct Node {
 	Node &parent;
-	Action prev_action;
+	const Action prev_action;
 	bool is_final;
 
 	// For MCTS
-	Float value_sum;
-	int n_visits;
+	array<Float, N_ACTIONS> value_sum;
+	array<int, N_ACTIONS> n_visits;
+	int total_n_visits;
 
 	// State of the world
-	int t;
+	const int t;
 	Pig pig;
-	Player ps[2];
-protected:
-	vector<Node> children;
+	const array<Player, 2> ps;
 
 public:
+	map<NodeSeri, Node> children;
+	array<map<NodeSeri, Node>::iterator, N_ACTIONS> children_nopigmove;
+public:
+	const static array<Action, N_ACTIONS> actions;
+
 	Node(Node &_parent, int x, int y, Direction d, Action _prev_a);
 	Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 		 int _P_x, int _P_y);
-	vector<Node> &get_children();
 	bool pig_trapped() const;
 	bool in_exit(int role) const;
 	void print() const;
-	int get_serialization() const;
+	NodeSeri get_serialization() const;
+	bool operator<(const Node &rhs) {
+		return get_serialization() < rhs.get_serialization();
+	}
+	Node &get_child(const Action action, bool pig_move=false);
 };
+
+

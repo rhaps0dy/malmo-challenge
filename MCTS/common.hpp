@@ -18,9 +18,9 @@ const bool WALLS[WALLS_H][WALLS_W] = {
 };
 
 enum Action {
-	A_LEFT = 0,
-	A_RIGHT = 1,
-	A_FRONT = 2
+	A_FRONT = 0,
+	A_LEFT = 1,
+	A_RIGHT = 2
 };
 constexpr int N_ACTIONS = 3;
 
@@ -38,6 +38,7 @@ enum Direction {
 struct Player {
 	int x, y;
 	Direction d;
+	Player(int _x, int _y, Direction _d) : x(_x), y(_y), d(_d) {}
 };
 struct Pig {
 	int x, y;

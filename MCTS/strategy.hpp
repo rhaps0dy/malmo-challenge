@@ -3,26 +3,32 @@
 #include "common.hpp"
 #include "node.hpp"
 
+#include <utility>
+#include <vector>
+
 using namespace std;
 
-typedef Action (*Strategy)(Node&);
-
-class StrategyChooser {
-	vector<pair<Float, Strategy> > p1_strats;
-
-public:
-	static StrategyChooser &get() {
-		static StrategyChooser instance;
-		return instance;
-	}
-	StrategyChooser(StrategyChooser const&) = delete;
-	void operator=(StrategyChooser const&) = delete;
-
-	StrategyChooser();
-	static Strategy random_strat();
-	static void update_probabilities(Float probs[], size_t n_probs);
+struct Strategy {
+	virtual Action act(const Node &from) = 0;
 };
 
-Action StrategyLeft(Node &start);
-Action StrategyRight(Node &start);
-Action StrategyFront(Node &start);
+class StrategyChooser {
+	vector<pair<Float, unique_ptr<Strategy> > > p_strats;
+public:
+	StrategyChooser(Node &root, Float probs[], size_t n_probs);
+	Strategy &random_strat();
+	void update_probabilities(Float probs[], size_t n_probs);
+};
+
+struct StrategyRandom : public Strategy {
+	virtual Action act(const Node &from);
+};
+
+struct StrategyPig : public Strategy {
+protected:
+	vector<Node*> nodes;
+	vector<Node*>::reverse_iterator prev_node;
+public:
+	StrategyPig(Node &root);
+	virtual Action act(const Node &from);
+};

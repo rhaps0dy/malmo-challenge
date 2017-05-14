@@ -29,4 +29,5 @@ public:
 		uniform_int_distribution<T> d(0, max_val);
 		return d(get().generator);
 	}
+	static default_random_engine &get_generator() { return get().generator; }
 };
