@@ -34,6 +34,7 @@ enum Direction {
 	D_SOUTH = 2,
 	D_WEST = 3
 };
+constexpr int N_DIRECTIONS = 4;
 
 struct Player {
 	int x, y;

@@ -8,36 +8,31 @@
 #include "random.hpp"
 
 #include <chrono>
+#include <unordered_map>
 using namespace std::chrono;
 
-Float pig_chase_reward(const Node &n) {
-	assert(n.is_final);
-	int basic_offset = -n.t/2;
-	if(n.pig_trapped()) basic_offset += 24;
-	else if(n.in_exit(0)) basic_offset += 4;
-	return static_cast<Float>(basic_offset); ///50.;
-}
+// The last one here contains the sum of the other 3
+static unordered_map<NodeSeri, array<int, N_ACTIONS+1> > _n_visits;
+
+static unordered_map<NodeSeri, array<Float, N_ACTIONS> > _value_sum;
 
 static
-Float uct_value(const Node &n, const size_t i, const Float c) {
-	assert(n.n_visits.at(i) > 0);
-	return n.value_sum[i]/n.n_visits[i] + c*sqrt(2.*log(n.total_n_visits)/n.n_visits[i]);
-}
-
-static
-Action best_child_action(Node *current, const Float constant) {
+Action best_child_action(array<int, N_ACTIONS+1> &n_visits,
+						 array<Float, N_ACTIONS> &value_sum,
+						 const Float constant) {
 	size_t n_best=0;
 	Action best[N_ACTIONS];
 	Float max_val = -INFINITY;
 
 	for(size_t i=0; i<N_ACTIONS; i++) {
-		if(current->n_visits.at(i) == 0) {
+		if(n_visits[i] == 0) {
 			if(!isnan(max_val))
 				n_best = 0;
 			max_val = NAN;
 			best[n_best++] = static_cast<Action>(i);
 		} else if(!isnan(max_val)) {
-			auto val = uct_value(*current, i, constant);
+			Float val = value_sum[i]/n_visits[i] +
+				constant*sqrt(2.*log(n_visits[N_ACTIONS])/n_visits[i]);
 			if(val > max_val) {
 				max_val = val;
 				n_best = 1;
@@ -51,46 +46,56 @@ Action best_child_action(Node *current, const Float constant) {
 	return best[Random::uniform_int<size_t>(n_best-1)];
 }
 
-Node &simulate_path(Node &_current, Float constant, StrategyChooser &sc) {
+#define TIME_SERIALIZATION(node) (node.get_serialization()*(MAX_T+1) + node.t)
+static
+void simulate_path(Node current, Float constant, StrategyChooser &sc) {
+	static vector<Float*> values;
+	values.clear();
+
 	Strategy &strategy = sc.random_strat();
 	strategy.reset();
-	Node *current = &_current;
-	while(!current->is_final) {
-		const int role = current->t%2;
-		if(role == 0) {
-			auto best_a = best_child_action(current, constant);
-			current = current->get_child(best_a, false);
+
+	while(!current.is_final) {
+		if(current.t%2 == 0) {
+			const NodeSeri ns = TIME_SERIALIZATION(current);
+			auto &n_visits = _n_visits.insert({ns, {{0}}}).first->second;
+			auto &value_sum = _value_sum.insert({ns, {{0.0}}}).first->second;
+			const Action best_a = best_child_action(n_visits, value_sum,
+													constant);
+			values.push_back(&value_sum[best_a]);
+			n_visits[best_a]++;
+			n_visits[N_ACTIONS]++;
+			current.make_child(best_a, false);
 		} else {
-			Action a = strategy.act(*current);
-			current = current->get_child(a, true);
+			const Action a = strategy.act(current);
+			current.make_child(a, true);
 		}
 	}
-	return *current;
+	const Float value = (current.value_sum[0] + 25.) / 50.;
+	for(auto v: values)
+		(*v) += value;
 }
 
-Action uct_best_action(Node &root, int budget, RewardFun reward_f,
+Action uct_best_action(Node &root, int budget,
 					   Float constant, StrategyChooser &sc)
 {
 	assert(budget>0);
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	while(budget--) {
-		Node *n = &simulate_path(root, constant, sc);
-		const Float value = reward_f(*n);
-		do {
-			size_t i = static_cast<size_t>(n->prev_action);
-			n = n->parent;
-			n->value_sum[i] += value;
-			n->n_visits[i] += 1;
-			n->total_n_visits += 1;
-		} while(n->parent != NULL);
+		simulate_path(root, constant, sc);
 		if(budget % 1000 == 0) {
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
 			cout << "1000 paths took: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
 			t1 = high_resolution_clock::now();
 		}
 	}
-	return best_child_action(&root, 0.0);
+	const NodeSeri root_seri = TIME_SERIALIZATION(root);
+	auto a = _n_visits.find(root_seri);
+	auto b = _value_sum.find(root_seri);
+	return best_child_action(a->second,
+							 b->second, 0.0);
 }
+#undef TIME_SERIALIZATION
 
 Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 					   Direction d1, int P_x, int P_y, int budget, Float c,
@@ -98,12 +103,14 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 {
 	Node root(x0, y0, d0, x1, y1, d1, P_x, P_y);
 	StrategyChooser sc(root, strat_probs, n_probs);
+	_value_sum.clear();
+	_n_visits.clear();
 	root.print();
-	Action a = uct_best_action(root, budget, pig_chase_reward, c, sc);
+	Action a = uct_best_action(root, budget, c, sc);
 
-	Node *next = root.get_child(a);
+	Node *next = root.get_child(a)->get_child(A_RIGHT);
 	next->print();
-	a = uct_best_action(*next, budget, pig_chase_reward, c, sc);
+	a = uct_best_action(*next, budget, c, sc);
 
 	next = next->get_child(a);
 	next->print();
@@ -119,7 +126,12 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 		}
 	}
 	for(Node *n: ns) {
-		cerr << "t = " << n->t << ", a = " << n->prev_action << ", value = " << (n->parent ? uct_value(*n->parent, static_cast<size_t>(n->prev_action), 0) : NAN) << endl;
+		Float value = 0.0;
+		for(Float v: _value_sum[n->get_serialization()])
+			value += v;
+		value /= _n_visits[n->get_serialization()][N_ACTIONS];
+		cerr << "t = " << n->t << ", a = " << n->prev_action << ", value = " <<
+			value << endl;
 	}
 #endif
 

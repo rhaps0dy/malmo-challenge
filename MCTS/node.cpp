@@ -9,6 +9,16 @@
 
 const array<Action, N_ACTIONS> Node::actions = {{A_FRONT, A_LEFT, A_RIGHT}};
 
+Node::Node(Node *_parent) :
+	parent(_parent), prev_action(A_LEFT), is_final(false), value_sum{{0.,0.,0.}},
+	n_visits{{0,0,0}}, total_n_visits(0), t(parent->t), pig(parent->pig),
+	ps(parent->ps), children(), children_nopigmove{{NULL, NULL, NULL}}
+{
+	assert(t<=MAX_T);
+	// prev_action and t are invalid, must call make_child
+	check_if_final();
+}
+
 Node::Node(Node *_parent, int x, int y, Direction d, Action _prev_a) :
 	parent(_parent), prev_action(_prev_a), is_final(false), value_sum{{0.,0.,0.}},
 	n_visits{{0,0,0}}, total_n_visits(0), t(parent->t+1), pig(parent->pig),
@@ -19,10 +29,24 @@ Node::Node(Node *_parent, int x, int y, Direction d, Action _prev_a) :
 	children_nopigmove{{NULL, NULL, NULL}}
 {
 	assert(t<=MAX_T);
+	check_if_final();
+}
+
+void Node::check_if_final() {
 	const int role = t % 2;
 	// role == 1 -> the environment has the final move
-	if(role==1 && (pig_trapped() || in_exit(1) || in_exit(0) || t>=MAX_T))
-		is_final = true;
+	if(role==1) {
+		if(pig_trapped()) {
+			value_sum[0] = 24-t/2;
+			is_final = true;
+		} else if(in_exit(0)) {
+			value_sum[0] = 4-t/2;
+			is_final = true;
+		} else if(t>=MAX_T) {
+			value_sum[0] = -t/2;
+			is_final = true;
+		}
+	}
 }
 
 Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
@@ -35,23 +59,10 @@ Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 {
 }
 
-Node *Node::get_child(const Action action, bool pig_move) {
+Node *Node::get_child(const Action action, const bool pig_move) {
 	if(children_nopigmove[action] == NULL) {
-		const int role = t%2;
-		int x=ps[role].x, y=ps[role].y, d=ps[role].d;
-		if(action == A_FRONT) {
-			switch(ps[role].d) {
-			case D_NORTH: if(WALLS[y-1][x]) { y -= 1; } break;
-			case D_SOUTH: if(WALLS[y+1][x]) { y += 1; } break;
-			case D_WEST: if(WALLS[y][x-1]) { x -= 1; } break;
-			case D_EAST: if(WALLS[y][x+1]) { x += 1; } break;
-			}
-		} else if(action == A_LEFT) {
-			d = (d+4-1)%4;
-		} else {
-			d = (d+1)%4;
-		}
-		Node child(this, x, y, static_cast<Direction>(d), action);
+		Node child(this);
+		child.make_child(action);
 		auto ret = children.emplace(make_pair(child.get_serialization(), child));
 		children_nopigmove.at(action) = &ret.first->second;
 	}
@@ -104,13 +115,33 @@ void Node::print() const {
 }
 
 NodeSeri Node::get_serialization() const {
-	const int serial = (pig.y
-		| (pig.x << 4)
-		| (ps[0].d << 8)
-		| (ps[0].y << 10)
-		| (ps[0].x << 14)
-		| (ps[1].d << 18)
-		| (ps[1].y << 20)
-		| (ps[1].x << 24));
+	const int serial = (pig.y   +
+		WALLS_H * (pig.x        +
+		WALLS_W * (ps[0].d      +
+		N_DIRECTIONS * (ps[0].y +
+		WALLS_H * (ps[0].x      +
+		WALLS_W * (ps[1].d      +
+		N_DIRECTIONS * (ps[1].y +
+		WALLS_H * (ps[1].x))))))));
 	return serial;
+}
+
+void Node::make_child(const Action action, const bool pig_move) {
+ 	const int role = t%2;
+	if(action == A_FRONT) {
+		const int x = ps[role].x;
+		const int y = ps[role].y;
+		switch(ps[role].d) {
+		case D_NORTH: if(WALLS[y-1][x]) { ps[role].y -= 1; } break;
+		case D_SOUTH: if(WALLS[y+1][x]) { ps[role].y += 1; } break;
+		case D_WEST: if(WALLS[y][x-1]) { ps[role].x -= 1; } break;
+		case D_EAST: if(WALLS[y][x+1]) { ps[role].x += 1; } break;
+		}
+	} else if(action == A_LEFT) {
+		ps[role].d = static_cast<Direction>((ps[role].d+4-1)%4);
+	} else {
+		ps[role].d = static_cast<Direction>((ps[role].d+1)%4);
+	}
+	t += 1;
+	check_if_final();
 }
