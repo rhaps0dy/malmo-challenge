@@ -12,10 +12,10 @@ Node::Node(Node &_parent, int x, int y, Direction d, Action _prev_a) :
 	parent(_parent), prev_action(_prev_a), is_final(false), value_sum{0.,0.,0.},
 	n_visits{0,0,0}, total_n_visits(0), t(parent.t+1), pig(parent.pig),
 	ps(parent.t%2 == 0 ?
-	   array<Player, 2>{Player(x, y, d), parent.ps[1]} :
-	   array<Player, 2>{parent.ps[0], Player(x, y, d)}),
+	   array<Player, 2>({Player(x, y, d), parent.ps[1]}) :
+	   array<Player, 2>({parent.ps[0], Player(x, y, d)})),
 	children(),
-	children_nopigmove{children.end(), children.end(), children.end()}
+	children_nopigmove({NULL, NULL, NULL})
 {
 	assert(t<=MAX_T);
 	const int role = t % 2;
@@ -28,12 +28,14 @@ Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 		int _P_x, int _P_y) :
 	parent(*this), prev_action(A_FRONT), is_final(false), value_sum{0.,0.,0.},
 	n_visits{0,0,0}, total_n_visits(0), t(0), pig{_P_x, _P_y},
-	ps{Player(x0, y0, d0), Player(x1, y1, d1)}
+	ps({Player(x0, y0, d0), Player(x1, y1, d1)}),
+	children(),
+	children_nopigmove({NULL, NULL, NULL})
 {
 }
 
 Node &Node::get_child(const Action action, bool pig_move) {
-	if(children_nopigmove[action] == children.end()) {
+	if(children_nopigmove[action] == NULL) {
 		const int role = t%2;
 		int x=ps[role].x, y=ps[role].y, d=ps[role].d;
 		if(action == A_FRONT) {
@@ -50,13 +52,13 @@ Node &Node::get_child(const Action action, bool pig_move) {
 		}
 		Node child(*this, x, y, static_cast<Direction>(d), action);
 		auto ret = children.emplace(make_pair(child.get_serialization(), child));
-		children_nopigmove.at(action) = ret.first;
+		children_nopigmove.at(action) = &ret.first->second;
 	}
 
 	if(!pig_move)
-		return children_nopigmove.at(action)->second;
+		return *children_nopigmove.at(action);
 
-	Node base(children_nopigmove.at(action)->second);
+	Node base(*children_nopigmove.at(action));
 	// base.pig.x = something; modify
 	auto ret = children.insert(make_pair(base.get_serialization(), base));
 	// return object if it already existed

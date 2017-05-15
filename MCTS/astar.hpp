@@ -55,17 +55,18 @@ Node &astar_search(Node &root) {
 	queue.insert(make_pair(f_cost(root), &root));
 	while (!queue.empty()) {
 		auto p = queue.begin();
-		if(goal(*p->second))
-			return *p->second;
+		Node &n = *p->second;
+		if(goal(n))
+			return n;
 
+		const NodeSeri p_seri = n.get_serialization();
 		queue.erase(p);
-		const NodeSeri p_seri = p->second->get_serialization();
 		if(closed.find(p_seri) != closed.end())
 			continue;
 		closed.insert(p_seri);
 
 		for(const Action a: Node::actions) {
-			auto child = p->second->get_child(a, false);
+			auto child = n.get_child(a, false);
 			if(two_roles) {
 				if(closed.find(child.get_serialization()) == closed.end())
 					queue.insert(make_pair(f_cost(child), &child));

@@ -5,6 +5,7 @@
 
 #include <utility>
 #include <vector>
+#include <memory>
 
 using namespace std;
 

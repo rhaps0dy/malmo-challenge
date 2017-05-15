@@ -26,7 +26,7 @@ struct Node {
 
 public:
 	map<NodeSeri, Node> children;
-	array<map<NodeSeri, Node>::iterator, N_ACTIONS> children_nopigmove;
+	array<Node*, N_ACTIONS> children_nopigmove;
 public:
 	const static array<Action, N_ACTIONS> actions;
 
