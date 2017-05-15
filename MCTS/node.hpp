@@ -10,7 +10,7 @@ using namespace std;
 typedef int NodeSeri;
 
 struct Node {
-	Node &parent;
+	Node *parent;
 	const Action prev_action;
 	bool is_final;
 
@@ -30,7 +30,7 @@ public:
 public:
 	const static array<Action, N_ACTIONS> actions;
 
-	Node(Node &_parent, int x, int y, Direction d, Action _prev_a);
+	Node(Node *_parent, int x, int y, Direction d, Action _prev_a);
 	Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 		 int _P_x, int _P_y);
 	bool pig_trapped() const;
@@ -40,7 +40,7 @@ public:
 	bool operator<(const Node &rhs) {
 		return get_serialization() < rhs.get_serialization();
 	}
-	Node &get_child(const Action action, bool pig_move=false);
+	Node *get_child(const Action action, bool pig_move=false);
 };
 
 

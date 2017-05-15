@@ -7,18 +7,18 @@
 #include "random.hpp"
 
 Float pig_chase_reward(const Node &n) {
-	if(n.is_final) {
-		if(n.pig_trapped()) return 24.;
-		if(n.in_exit(0)) return 4.;
-	}
-	if(n.t%2 == 1)
-		return -1.0;
-	return 0.0;
+	assert(n.is_final);
+	int basic_offset = -n.t/2;
+	if(n.pig_trapped()) basic_offset += 24;
+	else if(n.in_exit(0)) basic_offset += 4;
+	return static_cast<Float>(basic_offset+25)/50.;
 }
 
 static
 Float uct_value(const Node &n, const size_t i, const Float c) {
-	assert(n.n_visits.at(i) > 0);
+	if(n.n_visits.at(i) <= 0) {
+		cout << "shit\n";
+	}
 	return n.value_sum[i]/n.n_visits[i] + c*sqrt(2.*log(n.total_n_visits)/n.n_visits[i]);
 }
 
@@ -45,20 +45,22 @@ Action best_child_action(Node *current, const Float constant) {
 			}
 		}
 	}
+	assert(n_best > 0);
 	return best[Random::uniform_int<size_t>(n_best-1)];
 }
 
 Node &simulate_path(Node &_current, Float constant, StrategyChooser &sc) {
 	Strategy &strategy = sc.random_strat();
+	strategy.reset();
 	Node *current = &_current;
 	while(!current->is_final) {
 		const int role = current->t%2;
 		if(role == 0) {
 			auto best_a = best_child_action(current, constant);
-			current = &current->get_child(best_a, false);
+			current = current->get_child(best_a, false);
 		} else {
 			Action a = strategy.act(*current);
-			current = &current->get_child(a, true);
+			current = current->get_child(a, true);
 		}
 	}
 	return *current;
@@ -70,15 +72,14 @@ Action uct_best_action(Node &root, int budget, RewardFun reward_f,
 	assert(budget>0);
 	while(budget--) {
 		Node *n = &simulate_path(root, constant, sc);
-		Float value = 0.0;
+		const Float value = reward_f(*n);
 		do {
-			value += reward_f(*n);
-			n->total_n_visits += 1;
 			size_t i = static_cast<size_t>(n->prev_action);
-			n = &n->parent;
+			n = n->parent;
 			n->value_sum[i] += value;
 			n->n_visits[i] += 1;
-		} while(n != &root);
+			n->total_n_visits += 1;
+		} while(n->parent != NULL);
 	}
 	return best_child_action(&root, 0.0);
 }
@@ -95,14 +96,16 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 	root.print();
 	vector<Node *> ns;
 	ns.push_back(&root);
-	for(size_t j=0; ns.size() < 20; j++) {
-		if(ns[j]->is_final) continue;
-		for(auto c: ns[j]->children)
-			if(c.second.total_n_visits > 0)
-				ns.push_back(&c.second);
+	for(size_t j=0; j < ns.size() && ns.size() < 20; j++) {
+		for(Action a: Node::actions) {
+			Node *c = ns[j]->get_child(a);
+			if(c->parent->n_visits[a] > 0)
+				ns.push_back(c);
+		}
+		cout << "j: " << j << endl;
 	}
 	for(Node *n: ns) {
-		cerr << "t = " << n->t << ", a = " << n->prev_action << ", value = " << uct_value(n->parent, static_cast<size_t>(n->prev_action), 0) << endl;
+		cerr << "t = " << n->t << ", a = " << n->prev_action << ", value = " << (n->parent ? uct_value(*n->parent, static_cast<size_t>(n->prev_action), 0) : NAN) << endl;
 	}
 #endif
 
@@ -114,11 +117,11 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 // test
 int main() {
 	Float ps[2] = {0., 1.};
-	constexpr int budget=100000;
-	assert(ffi_best_action(2, 3, D_NORTH, 4, 3, D_EAST, 6, 1, budget, 2.0, ps, 2) == 0);
+	constexpr int budget=1000;
+	assert(ffi_best_action(2, 3, D_NORTH, 4, 3, D_EAST, 6, 1, budget, 2.0, ps, 2) == A_LEFT);
 	ps[0] = 1;
 	ps[1] = 0;
-	assert(ffi_best_action(2, 3, D_EAST, 6, 3, D_SOUTH, 5, 3, budget, 2.0, ps, 2) == 2);
+	assert(ffi_best_action(2, 3, D_EAST, 6, 3, D_SOUTH, 5, 3, budget, 2.0, ps, 2) == A_FRONT);
 	return 0;
 }
 #endif

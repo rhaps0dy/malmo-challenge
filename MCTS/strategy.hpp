@@ -11,6 +11,7 @@ using namespace std;
 
 struct Strategy {
 	virtual Action act(const Node &from) = 0;
+	virtual void reset(){};
 };
 
 class StrategyChooser {
@@ -32,4 +33,5 @@ protected:
 public:
 	StrategyPig(Node &root);
 	virtual Action act(const Node &from);
+	virtual void reset() { prev_node = nodes.rbegin(); }
 };

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdio>
 
 #include "common.hpp"
 #include "strategy.hpp"
@@ -42,16 +43,18 @@ Action StrategyRandom::act(const Node &from) {
 }
 
 StrategyPig::StrategyPig(Node &root) : nodes() {
-	Node *node = &astar_search<
-		pig_position_f_cost<1>, pig_position_goal<1>, false>(root);
-	nodes.push_back(node);
-	while(&node->parent != node) {
-		node = &node->parent;
+	Node *node = astar_search<pig_position_f_cost<1>, pig_position_goal<1>,
+							  false>(root.get_child(A_LEFT));
+	while(node != NULL) {
 		nodes.push_back(node);
+		node = node->parent;
 	}
 	prev_node = nodes.rbegin();
 }
 Action StrategyPig::act(const Node &from) {
+	if(prev_node == nodes.rend())
+		return A_RIGHT;
+
 	assert(from.t >= (*prev_node)->t);
 	while(prev_node != nodes.rend() && (*prev_node)->t < from.t)
 		prev_node++;

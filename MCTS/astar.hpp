@@ -49,38 +49,34 @@ int pig_optimal_f_cost(const Node &n) {
 
 
 template<AStarFCost f_cost, AStarGoal goal, bool two_roles>
-Node &astar_search(Node &root) {
+Node *astar_search(Node *root) {
 	set<NodeSeri> closed;
 	set< pair<int, Node*> > queue;
 
-	queue.insert(make_pair(f_cost(root), &root));
+	queue.insert(make_pair(f_cost(*root), root));
 	while (!queue.empty()) {
 		auto p = queue.begin();
-		Node &n = *p->second;
-		if(goal(n))
+		Node *n = p->second;
+		if(goal(*n))
 			return n;
 
 		queue.erase(p);
-		const NodeSeri p_seri = n.get_serialization();
+		const NodeSeri p_seri = n->get_serialization();
 		if(closed.find(p_seri) != closed.end())
 			continue;
 		closed.insert(p_seri);
 
 		for(const Action a: Node::actions) {
-			auto child = n.get_child(a);
-//			if(two_roles) {
-//				if(closed.find(child.get_serialization()) == closed.end())
-//					queue.insert(make_pair(f_cost(child), &child));
-//			} else {
-				auto child2 = child.get_child(A_LEFT);
-				if((long)(&child2) > 0x0000000200200140) {
-					;
-				}
-				if(closed.find(child2.get_serialization()) == closed.end())
-					queue.insert(make_pair(f_cost(child2), &child2));
-//			}
+			Node *child = n->get_child(a);
+			if(two_roles) {
+				if(closed.find(child->get_serialization()) == closed.end())
+					queue.insert(make_pair(f_cost(*child), child));
+			} else {
+				Node *child2 = child->get_child(A_LEFT);
+				if(closed.find(child2->get_serialization()) == closed.end())
+					queue.insert(make_pair(f_cost(*child2), child2));
+			}
 		}
-		cout << "Queue size: " << queue.size() << endl;
 	}
 	assert(false); // No path from root to a goal
 	return root;

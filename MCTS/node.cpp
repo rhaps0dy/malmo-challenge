@@ -2,18 +2,19 @@
 #include <iostream>
 #include <cstdio>
 #include <utility>
+#include <set>
 
 #include "node.hpp"
 
 
 const array<Action, N_ACTIONS> Node::actions = {{A_FRONT, A_LEFT, A_RIGHT}};
 
-Node::Node(Node &_parent, int x, int y, Direction d, Action _prev_a) :
+Node::Node(Node *_parent, int x, int y, Direction d, Action _prev_a) :
 	parent(_parent), prev_action(_prev_a), is_final(false), value_sum{{0.,0.,0.}},
-	n_visits{{0,0,0}}, total_n_visits(0), t(parent.t+1), pig(parent.pig),
-	ps(parent.t%2 == 0 ?
-	   array<Player, 2>{{Player(x, y, d), parent.ps[1]}} :
-	   array<Player, 2>{{parent.ps[0], Player(x, y, d)}}),
+	n_visits{{0,0,0}}, total_n_visits(0), t(parent->t+1), pig(parent->pig),
+	ps(parent->t%2 == 0 ?
+	   array<Player, 2>{{Player(x, y, d), parent->ps[1]}} :
+	   array<Player, 2>{{parent->ps[0], Player(x, y, d)}}),
 	children(),
 	children_nopigmove{{NULL, NULL, NULL}}
 {
@@ -22,12 +23,19 @@ Node::Node(Node &_parent, int x, int y, Direction d, Action _prev_a) :
 	// role == 1 -> the environment has the final move
 	if(role==1 && (pig_trapped() || in_exit(1) || in_exit(0) || t>=MAX_T))
 		is_final = true;
-	cout << "Prev action: " << prev_action << " Addy of parent: " << &parent << endl;
+	//cout << "Prev action: " << prev_action << " Addy of parent: " << parent << endl;
+	set<Node *> seen;
+	Node *n = this;
+	while(n->parent != NULL) {
+		assert(seen.find(n) == seen.end());
+		seen.insert(n);
+		n = n->parent;
+	}
 }
 
 Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 		int _P_x, int _P_y) :
-	parent(*this), prev_action(A_FRONT), is_final(false), value_sum{{0.,0.,0.}},
+	parent(NULL), prev_action(A_FRONT), is_final(false), value_sum{{0.,0.,0.}},
 	n_visits{{0,0,0}}, total_n_visits(0), t(0), pig{_P_x, _P_y},
 	ps{{Player(x0, y0, d0), Player(x1, y1, d1)}},
 	children(),
@@ -36,7 +44,8 @@ Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 	cout << "THIS SHOULD NOT BE HAPPENING MORE THAN ONCE\n";
 }
 
-Node &Node::get_child(const Action action, bool pig_move) {
+Node *Node::get_child(const Action action, bool pig_move) {
+	//cout << this  << " (" << this->parent << ") action: " << action << endl;
 	if(children_nopigmove[action] == NULL) {
 		const int role = t%2;
 		int x=ps[role].x, y=ps[role].y, d=ps[role].d;
@@ -52,21 +61,23 @@ Node &Node::get_child(const Action action, bool pig_move) {
 		} else {
 			d = (d+1)%4;
 		}
-		Node child(*this, x, y, static_cast<Direction>(d), action);
+		Node child(this, x, y, static_cast<Direction>(d), action);
 		auto ret = children.emplace(make_pair(child.get_serialization(), child));
-		cout << "Child: " << &child << " Retsecond: " << &ret.first->second <<
-			" found: " << &children.find(child.get_serialization())->second << endl;
+		//Node *n1 = &ret.first->second;
+		//Node *n2 = &children.find(child.get_serialization())->second;
+		//cout << "Child: " << &child << " Retsecond: " << n1 << " found: " << n2 << endl;
+		//n1->print();
 		children_nopigmove.at(action) = &ret.first->second;
 	}
 
 	if(!pig_move)
-		return *children_nopigmove.at(action);
+		return children_nopigmove.at(action);
 
 	Node base(*children_nopigmove.at(action));
 	// base.pig.x = something; modify
 	auto ret = children.insert(make_pair(base.get_serialization(), base));
 	// return object if it already existed
-	return ret.first->second;
+	return &ret.first->second;
 }
 
 bool Node::pig_trapped() const {
