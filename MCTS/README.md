@@ -1,4 +1,5 @@
-#MCTS to-do
+# MCTS to-do
+ * Implement the Python glue.
  * Split node into UCT and A*, or something, so that UCT can use the copy
    pointer and A* can use unique_ptr which is quite fast. Or allocate in a
    vector and have an array of pointers.
@@ -8,3 +9,4 @@
    the children nodes have many more samples than the parents.
  * Incorporate learned pig movements, with float pig position, when the pig
    started moving, and maybe player positions.
+ * If necessary: make MCTS parallel. LOW PRIORITY.
