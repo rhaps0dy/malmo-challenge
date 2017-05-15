@@ -10,12 +10,12 @@ set(CONCAT_CXX_FILES node.cpp uct.cpp strategy.cpp)
 
 #CXXFLAGS
 set(CMAKE_CXX_FLAGS_DEBUG  "-g -D_GLIBCXX_DEBUG -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -D_GLIBCXX_DEBUG")
 add_definitions(-std=c++14)
 
 set(CMAKE_MACOSX_RPATH 1)
 
 add_executable(main ${CONCAT_CXX_FILES})
-add_library(mcts SHARED ${CONCAT_CXX_FILES})
+#add_library(mcts SHARED ${CONCAT_CXX_FILES})
 

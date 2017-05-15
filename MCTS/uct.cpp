@@ -1,24 +1,26 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <cstdio>
 
 #include "uct.hpp"
 #include "strategy.hpp"
 #include "random.hpp"
+
+#include <chrono>
+using namespace std::chrono;
 
 Float pig_chase_reward(const Node &n) {
 	assert(n.is_final);
 	int basic_offset = -n.t/2;
 	if(n.pig_trapped()) basic_offset += 24;
 	else if(n.in_exit(0)) basic_offset += 4;
-	return static_cast<Float>(basic_offset+25)/50.;
+	return static_cast<Float>(basic_offset); ///50.;
 }
 
 static
 Float uct_value(const Node &n, const size_t i, const Float c) {
-	if(n.n_visits.at(i) <= 0) {
-		cout << "shit\n";
-	}
+	assert(n.n_visits.at(i) > 0);
 	return n.value_sum[i]/n.n_visits[i] + c*sqrt(2.*log(n.total_n_visits)/n.n_visits[i]);
 }
 
@@ -70,6 +72,7 @@ Action uct_best_action(Node &root, int budget, RewardFun reward_f,
 					   Float constant, StrategyChooser &sc)
 {
 	assert(budget>0);
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	while(budget--) {
 		Node *n = &simulate_path(root, constant, sc);
 		const Float value = reward_f(*n);
@@ -80,6 +83,11 @@ Action uct_best_action(Node &root, int budget, RewardFun reward_f,
 			n->n_visits[i] += 1;
 			n->total_n_visits += 1;
 		} while(n->parent != NULL);
+		if(budget % 1000 == 0) {
+			high_resolution_clock::time_point t2 = high_resolution_clock::now();
+			cout << "1000 paths took: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
+			t1 = high_resolution_clock::now();
+		}
 	}
 	return best_child_action(&root, 0.0);
 }
@@ -90,10 +98,17 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 {
 	Node root(x0, y0, d0, x1, y1, d1, P_x, P_y);
 	StrategyChooser sc(root, strat_probs, n_probs);
-	const Action a = uct_best_action(root, budget, pig_chase_reward, c, sc);
+	root.print();
+	Action a = uct_best_action(root, budget, pig_chase_reward, c, sc);
+
+	Node *next = root.get_child(a);
+	next->print();
+	a = uct_best_action(*next, budget, pig_chase_reward, c, sc);
+
+	next = next->get_child(a);
+	next->print();
 
 #ifndef NDEBUG
-	root.print();
 	vector<Node *> ns;
 	ns.push_back(&root);
 	for(size_t j=0; j < ns.size() && ns.size() < 20; j++) {
@@ -102,7 +117,6 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 			if(c->parent->n_visits[a] > 0)
 				ns.push_back(c);
 		}
-		cout << "j: " << j << endl;
 	}
 	for(Node *n: ns) {
 		cerr << "t = " << n->t << ", a = " << n->prev_action << ", value = " << (n->parent ? uct_value(*n->parent, static_cast<size_t>(n->prev_action), 0) : NAN) << endl;
@@ -113,15 +127,19 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 }
 
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
 // test
 int main() {
 	Float ps[2] = {0., 1.};
-	constexpr int budget=1000;
-	assert(ffi_best_action(2, 3, D_NORTH, 4, 3, D_EAST, 6, 1, budget, 2.0, ps, 2) == A_LEFT);
-	ps[0] = 1;
-	ps[1] = 0;
-	assert(ffi_best_action(2, 3, D_EAST, 6, 3, D_SOUTH, 5, 3, budget, 2.0, ps, 2) == A_FRONT);
+	constexpr int budget=10000;
+	if(ffi_best_action(2, 3, D_NORTH, 4, 3,
+					   D_EAST, 6, 1, budget, 2.0, ps, 2) != A_FRONT) {
+		cout << "Failed 1st\n";
+	}
+	if(ffi_best_action(2, 3, D_EAST, 6, 3,
+						   D_SOUTH, 5, 3, budget, 2.0, ps, 2) != A_FRONT) {
+		cout << "Failed 2nd\n";
+	}
 	return 0;
 }
-#endif
+//#endif

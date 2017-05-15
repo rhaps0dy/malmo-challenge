@@ -23,14 +23,6 @@ Node::Node(Node *_parent, int x, int y, Direction d, Action _prev_a) :
 	// role == 1 -> the environment has the final move
 	if(role==1 && (pig_trapped() || in_exit(1) || in_exit(0) || t>=MAX_T))
 		is_final = true;
-	//cout << "Prev action: " << prev_action << " Addy of parent: " << parent << endl;
-	set<Node *> seen;
-	Node *n = this;
-	while(n->parent != NULL) {
-		assert(seen.find(n) == seen.end());
-		seen.insert(n);
-		n = n->parent;
-	}
 }
 
 Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
@@ -41,11 +33,9 @@ Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 	children(),
 	children_nopigmove{{NULL, NULL, NULL}}
 {
-	cout << "THIS SHOULD NOT BE HAPPENING MORE THAN ONCE\n";
 }
 
 Node *Node::get_child(const Action action, bool pig_move) {
-	//cout << this  << " (" << this->parent << ") action: " << action << endl;
 	if(children_nopigmove[action] == NULL) {
 		const int role = t%2;
 		int x=ps[role].x, y=ps[role].y, d=ps[role].d;
@@ -63,10 +53,6 @@ Node *Node::get_child(const Action action, bool pig_move) {
 		}
 		Node child(this, x, y, static_cast<Direction>(d), action);
 		auto ret = children.emplace(make_pair(child.get_serialization(), child));
-		//Node *n1 = &ret.first->second;
-		//Node *n2 = &children.find(child.get_serialization())->second;
-		//cout << "Child: " << &child << " Retsecond: " << n1 << " found: " << n2 << endl;
-		//n1->print();
 		children_nopigmove.at(action) = &ret.first->second;
 	}
 

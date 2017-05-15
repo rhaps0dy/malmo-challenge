@@ -11,7 +11,7 @@ using namespace std;
 
 struct Strategy {
 	virtual Action act(const Node &from) = 0;
-	virtual void reset(){};
+	virtual void reset() {}
 };
 
 class StrategyChooser {
@@ -24,6 +24,7 @@ public:
 
 struct StrategyRandom : public Strategy {
 	virtual Action act(const Node &from);
+//	virtual void reset() {}
 };
 
 struct StrategyPig : public Strategy {
