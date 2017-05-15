@@ -5,7 +5,6 @@
 
 #include <utility>
 #include <vector>
-#include <memory>
 
 using namespace std;
 
@@ -27,10 +26,12 @@ struct StrategyRandom : public Strategy {
 //	virtual void reset() {}
 };
 
+struct _t_action { int t; Action a; };
+
 struct StrategyPig : public Strategy {
 protected:
-	vector<Node*> nodes;
-	vector<Node*>::reverse_iterator prev_node;
+	vector<_t_action> nodes;
+	vector<_t_action>::reverse_iterator prev_node;
 public:
 	StrategyPig(Node &root);
 	virtual Action act(const Node &from);

@@ -71,7 +71,7 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 			current.make_child(a, true);
 		}
 	}
-	const Float value = (current.value_sum[0] + 25.) / 50.;
+	const Float value = static_cast<Float>(current.value + 25) / 50.;
 	for(auto v: values)
 		(*v) += value;
 }

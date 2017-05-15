@@ -48,17 +48,17 @@ Action StrategyRandom::act(const Node &from) {
 
 StrategyPig::StrategyPig(Node &root) : nodes() {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	Node *node = astar_search<pig_position_f_cost<1>, pig_position_goal<1>,
+	Node *node = &*astar_search<pig_position_f_cost<1>, pig_position_goal<1>,
 							  false>(root.get_child(A_LEFT));
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	cout << "Astar took: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
 	while(node != NULL) {
-		nodes.push_back(node);
+		nodes.push_back({node->t, node->prev_action});
 		node = node->parent;
 	}
 #ifndef NDEBUG
 	for(auto it=nodes.rbegin(); it!=nodes.rend(); it++)
-		(*it)->print();
+		cout << "t = " << it->t << " action = " << it->a << endl;
 #endif
 	prev_node = nodes.rbegin();
 }
@@ -66,11 +66,11 @@ Action StrategyPig::act(const Node &from) {
 	if(prev_node == nodes.rend())
 		return A_RIGHT;
 
-	assert(from.t >= (*prev_node)->t);
-	while(prev_node != nodes.rend() && (*prev_node)->t <= from.t)
+	assert(from.t >= prev_node->t);
+	while(prev_node != nodes.rend() && prev_node->t <= from.t)
 		prev_node++;
 	if(prev_node == nodes.rend())
 		return A_RIGHT;
-	assert((*prev_node)->t == from.t+1);
-	return (*prev_node)->prev_action;
+	assert(prev_node->t == from.t+1);
+	return prev_node->a;
 }
