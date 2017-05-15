@@ -6,3 +6,4 @@ Makefile
 .DS_Store
 _all.cpp
 *.so
+*.dylib

@@ -42,14 +42,14 @@ Action StrategyRandom::act(const Node &from) {
 }
 
 StrategyPig::StrategyPig(Node &root) : nodes() {
-	Node &node = astar_search<
+	Node *node = &astar_search<
 		pig_position_f_cost<1>, pig_position_goal<1>, false>(root);
-/*	nodes.push_back(node);
+	nodes.push_back(node);
 	while(&node->parent != node) {
 		node = &node->parent;
 		nodes.push_back(node);
 	}
-	prev_node = nodes.rbegin();*/
+	prev_node = nodes.rbegin();
 }
 Action StrategyPig::act(const Node &from) {
 	assert(from.t >= (*prev_node)->t);
