@@ -6,7 +6,7 @@ function(cat IN_FILE OUT_FILE)
   file(APPEND ${OUT_FILE} "${CONTENTS}")
 endfunction()
 
-set(CONCAT_CXX_FILES node.cpp uct.cpp strategy.cpp)
+set(CONCAT_CXX_FILES node.cpp uct.cpp strategy.cpp path_cache.cpp)
 
 #CXXFLAGS
 set(CMAKE_CXX_FLAGS_DEBUG  "-g -D_GLIBCXX_DEBUG -Wall")

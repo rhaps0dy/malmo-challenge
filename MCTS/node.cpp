@@ -48,10 +48,9 @@ Node* Node::get_child(const Action action) {
 }
 
 bool Node::pig_trapped() const {
-	static const int offsets[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
 	for(size_t i=0; i<4; i++) {
-		const int y = pig.y+offsets[i][1];
-		const int x = pig.x+offsets[i][0];
+		const int y = pig.y + PIG_AROUND_OFFSETS[i][1];
+		const int x = pig.x + PIG_AROUND_OFFSETS[i][0];
 		if(WALLS[y][x] &&
 		   ((ps[0].x != x) || (ps[0].y != y)) &&
 		   ((ps[1].x != x) || (ps[1].y != y)))

@@ -35,6 +35,7 @@ enum Direction {
 	D_WEST = 3
 };
 constexpr int N_DIRECTIONS = 4;
+constexpr int PIG_AROUND_OFFSETS[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
 
 struct Player {
 	int x, y;
@@ -44,3 +45,4 @@ struct Player {
 struct Pig {
 	int x, y;
 };
+
