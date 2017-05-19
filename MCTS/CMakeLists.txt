@@ -17,5 +17,5 @@ add_definitions(-std=c++14)
 set(CMAKE_MACOSX_RPATH 1)
 
 add_executable(main ${CONCAT_CXX_FILES})
-#add_library(mcts SHARED ${CONCAT_CXX_FILES})
+add_library(uct SHARED ${CONCAT_CXX_FILES})
 

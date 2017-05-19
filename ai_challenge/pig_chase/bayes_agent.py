@@ -19,8 +19,9 @@ class BayesAgent(BaseAgent):
     def __init__(self, name, n_actions, visualizer=None):
         super(BaseAgent, self).__init__(name, n_actions, visualizer)
         self.bp = tsearch.BayesianPlanner([tsearch.focused, tsearch.random])
-        self.bp.set_strategy_proba(self.PRIORS)
+
         self._prev_state = None
+        self.bp.reset(self.PRIORS)
 
     def act(self, symbolic_state, reward, done, is_training=False):
         cur_state = [None]*8
@@ -39,6 +40,7 @@ class BayesAgent(BaseAgent):
             self.bp.infer_strategy_proba(self._prev_state, cur_state)
         if done:
             self._prev_state = None
+            self.bp.reset(self.PRIORS)
         else:
             self._prev_state = cur_state
         return self.bp.plan_best_action(cur_state)

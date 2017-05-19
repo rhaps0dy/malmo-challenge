@@ -16,6 +16,11 @@ static unordered_map<NodeSeri, array<int, N_ACTIONS+1> > _n_visits;
 
 static unordered_map<NodeSeri, array<Float, N_ACTIONS> > _value_sum;
 
+void ffi_clear_values() {
+	_n_visits.clear();
+	_value_sum.clear();
+}
+
 static
 Action best_child_action(array<int, N_ACTIONS+1> &n_visits,
 						 array<Float, N_ACTIONS> &value_sum,
@@ -97,9 +102,10 @@ Action uct_best_action(Node &root, int budget,
 }
 #undef TIME_SERIALIZATION
 
-Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
-					   Direction d1, int P_x, int P_y, int budget, Float c,
-					   Float strat_probs[], size_t n_probs)
+Action ffi_best_action(int budget, Float c,
+					   Float strat_probs[], size_t n_probs,
+					   int P_x, int P_y, int y1, int x1, Direction d1,
+					   int y0, int x0, Direction d0)
 {
 	Node root(x0, y0, d0, x1, y1, d1, P_x, P_y);
 	StrategyChooser sc(root, strat_probs, n_probs);
@@ -115,6 +121,7 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 
 	root.make_child(a);
 	root.print();
+
 
 #ifndef NDEBUG
 	vector<Node> ns;
@@ -146,14 +153,14 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 int main() {
 	Float ps[2] = {0., 1.};
 	constexpr int budget=10000;
-	if(ffi_best_action(2, 3, D_NORTH, 4, 3,
-					   D_EAST, 6, 1, budget, 2.0, ps, 2) != A_FRONT) {
+	if(ffi_best_action(budget, 2.0, ps, 2,
+					   6, 1, 4, 3, D_EAST, 2, 3, D_NORTH) != A_FRONT) {
 		cout << "Failed 1st\n";
 	} else {
 		cout << "Succeeded 1st\n";
 	}
-	if(ffi_best_action(2, 3, D_EAST, 6, 3,
-						   D_SOUTH, 5, 3, budget, 2.0, ps, 2) != A_FRONT) {
+	if(ffi_best_action(budget, 2.0, ps, 2,
+					   5, 3, 6, 3, D_SOUTH, 2, 3, D_EAST) != A_FRONT) {
 		cout << "Failed 2nd\n";
 	} else {
 		cout << "Succeeded 2nd\n";
@@ -161,3 +168,9 @@ int main() {
 	return 0;
 }
 //#endif
+
+void ffi_print_state(int P_x, int P_y, int y1, int x1, Direction d1,
+					 int y0, int x0, Direction d0) {
+	Node n(x0, y0, d0, x1, y1, d1, P_x, P_y);
+	n.print();
+}

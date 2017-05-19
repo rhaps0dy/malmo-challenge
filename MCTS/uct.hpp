@@ -15,7 +15,11 @@ Node &simulate_path(Node &current, Float constant);
 Action uct_best_action(Node &root, int budget, RewardFun f, Float constant);
 
 extern "C" {
-	Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
-						   Direction d1, int P_x, int P_y, int budget, Float c,
-						   Float strat_probs[], size_t n_probs);
+	Action ffi_best_action(int budget, Float c,
+						   Float strat_probs[], size_t n_probs,
+						   int P_x, int P_y, int y1, int x1, Direction d1,
+						   int y0, int x0, Direction d0);
+	void ffi_clear_values();
+	void ffi_print_state(int P_x, int P_y, int y1, int x1, Direction d1,
+						 int y0, int x0, Direction d0);
 }
