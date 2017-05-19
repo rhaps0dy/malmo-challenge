@@ -108,29 +108,31 @@ Action ffi_best_action(int x0, int y0, Direction d0, int x1, int y1,
 	root.print();
 	Action a = uct_best_action(root, budget, c, sc);
 
-	Node *next = root.get_child(a)->get_child(A_RIGHT);
-	next->print();
-	a = uct_best_action(*next, budget, c, sc);
+	root.make_child(a);
+	root.make_child(A_RIGHT);
+	root.print();
+	a = uct_best_action(root, budget, c, sc);
 
-	next = next->get_child(a);
-	next->print();
+	root.make_child(a);
+	root.print();
 
 #ifndef NDEBUG
-	vector<Node *> ns;
-	ns.push_back(&root);
+	vector<Node> ns;
+	ns.push_back(root);
 	for(size_t j=0; j < ns.size() && ns.size() < 20; j++) {
 		for(Action a: Node::actions) {
-			Node *c = ns[j]->get_child(a);
-			if(c->parent->n_visits[a] > 0)
-				ns.push_back(c);
+			Node n = ns[j];
+			n.make_child(a);
+			if(_n_visits[n.get_serialization()][N_ACTIONS] > 0)
+				ns.push_back(n);
 		}
 	}
-	for(Node *n: ns) {
+	for(Node &n: ns) {
 		Float value = 0.0;
-		for(Float v: _value_sum[n->get_serialization()])
+		for(Float v: _value_sum[n.get_serialization()])
 			value += v;
-		value /= _n_visits[n->get_serialization()][N_ACTIONS];
-		cerr << "t = " << n->t << ", a = " << n->prev_action << ", value = " <<
+		value /= _n_visits[n.get_serialization()][N_ACTIONS];
+		cerr << "t = " << n.t << ", a = " << n.prev_action << ", value = " <<
 			value << endl;
 	}
 #endif
@@ -147,10 +149,14 @@ int main() {
 	if(ffi_best_action(2, 3, D_NORTH, 4, 3,
 					   D_EAST, 6, 1, budget, 2.0, ps, 2) != A_FRONT) {
 		cout << "Failed 1st\n";
+	} else {
+		cout << "Succeeded 1st\n";
 	}
 	if(ffi_best_action(2, 3, D_EAST, 6, 3,
 						   D_SOUTH, 5, 3, budget, 2.0, ps, 2) != A_FRONT) {
 		cout << "Failed 2nd\n";
+	} else {
+		cout << "Succeeded 2nd\n";
 	}
 	return 0;
 }

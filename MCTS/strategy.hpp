@@ -23,17 +23,9 @@ public:
 
 struct StrategyRandom : public Strategy {
 	virtual Action act(const Node &from);
-//	virtual void reset() {}
 };
 
-struct _t_action { int t; Action a; };
-
 struct StrategyPig : public Strategy {
-protected:
-	vector<_t_action> nodes;
-	vector<_t_action>::reverse_iterator prev_node;
 public:
-	StrategyPig(Node &root);
 	virtual Action act(const Node &from);
-	virtual void reset() { prev_node = nodes.rbegin(); }
 };

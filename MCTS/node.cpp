@@ -7,20 +7,12 @@
 
 const array<Action, N_ACTIONS> Node::actions = {{A_FRONT, A_LEFT, A_RIGHT}};
 
-Node::Node(Node *_parent) :
-	parent(_parent), prev_action(A_FRONT), is_final(false), value(0),
-	t(parent->t), pig(parent->pig), ps(parent->ps), children()
-{
-	assert(t<=MAX_T);
-	// prev_action and t are invalid, must call make_child
-	check_if_final();
-}
-
 Node::Node(int x0, int y0, Direction d0, int x1, int y1, Direction d1,
 		int _P_x, int _P_y) :
-	parent(NULL), prev_action(A_FRONT), is_final(false), value(0), t(0),
-	pig{_P_x, _P_y}, ps{{Player(x0, y0, d0), Player(x1, y1, d1)}}, children() {}
-
+	prev_action(A_FRONT), is_final(false), value(0), t(0),
+	pig{_P_x, _P_y}, ps{{Player(x0, y0, d0), Player(x1, y1, d1)}} {
+	check_if_final();
+}
 
 void Node::check_if_final() {
 	const int role = t % 2;
@@ -37,14 +29,6 @@ void Node::check_if_final() {
 			is_final = true;
 		}
 	}
-}
-
-Node* Node::get_child(const Action action) {
-	if(!children[action]) {
-		children[action] = unique_ptr<Node>(new Node(this));
-		children[action]->make_child(action);
-	}
-	return &*children[action];
 }
 
 bool Node::pig_trapped() const {
@@ -112,5 +96,6 @@ void Node::make_child(const Action action, const bool pig_move) {
 		ps[role].d = static_cast<Direction>((ps[role].d+1)%4);
 	}
 	t += 1;
+	prev_action = action;
 	check_if_final();
 }

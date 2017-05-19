@@ -4,11 +4,9 @@
 #include "common.hpp"
 #include "strategy.hpp"
 #include "random.hpp"
-#include "astar.hpp"
+#include "path_cache.hpp"
 
-#include <chrono>
 #include <iostream>
-using namespace std::chrono;
 
 Strategy &StrategyChooser::random_strat()
 {
@@ -28,7 +26,7 @@ StrategyChooser::StrategyChooser(Node &root, Float probs[],
 								 size_t n_probs) : p_strats(n_probs) {
 	assert(n_probs == 2);
 	p_strats.emplace_back(make_pair(probs[0], unique_ptr<Strategy>(new StrategyRandom())));
-	p_strats.emplace_back(make_pair(probs[1], unique_ptr<Strategy>(new StrategyPig(root))));
+	p_strats.emplace_back(make_pair(probs[1], unique_ptr<Strategy>(new StrategyPig())));
 }
 
 void StrategyChooser::update_probabilities(Float probs[], size_t n_probs) {
@@ -46,31 +44,18 @@ Action StrategyRandom::act(const Node &from) {
 	return static_cast<Action>(uniform3(generator));
 }
 
-StrategyPig::StrategyPig(Node &root) : nodes() {
-	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	Node *node = &*astar_search<pig_position_f_cost<1>, pig_position_goal<1>,
-							  false>(root.get_child(A_LEFT));
-	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	cout << "Astar took: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
-	while(node != NULL) {
-		nodes.push_back({node->t, node->prev_action});
-		node = node->parent;
-	}
-#ifndef NDEBUG
-	for(auto it=nodes.rbegin(); it!=nodes.rend(); it++)
-		cout << "t = " << it->t << " action = " << it->a << endl;
-#endif
-	prev_node = nodes.rbegin();
-}
+#define GET(array_name) (PathCache::get().array_name[from.pig.y-1][from.pig.x-1] \
+						 [from.ps[1].y-1][from.ps[1].x-1][from.ps[1].d])
 Action StrategyPig::act(const Node &from) {
-	if(prev_node == nodes.rend())
+#ifndef NDEBUG
+	assert(from.pig.y-1 >= 0 && from.pig.y-1 < PEN_H);
+	assert(from.pig.x-1 >= 0 && from.pig.x-1 < PEN_W);
+	assert(from.ps[1].y-1 >= 0 && from.ps[1].y-1 < PEN_H);
+	assert(from.ps[1].x-1 >= 0 && from.ps[1].x-1 < PEN_W);
+	assert(from.ps[1].d >= 0 && from.ps[1].d < N_DIRECTIONS);
+#endif
+	if(GET(location_cost) == 1)
 		return A_RIGHT;
-
-	assert(from.t >= prev_node->t);
-	while(prev_node != nodes.rend() && prev_node->t <= from.t)
-		prev_node++;
-	if(prev_node == nodes.rend())
-		return A_RIGHT;
-	assert(prev_node->t == from.t+1);
-	return prev_node->a;
+	return static_cast<Action>(GET(location_action));
 }
+#undef GET
