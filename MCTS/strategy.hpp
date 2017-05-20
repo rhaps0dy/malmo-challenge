@@ -16,7 +16,7 @@ struct Strategy {
 class StrategyChooser {
 	vector<pair<Float, unique_ptr<Strategy> > > p_strats;
 public:
-	StrategyChooser(Node &root, Float probs[], size_t n_probs);
+	StrategyChooser(Float probs[], size_t n_probs);
 	Strategy &random_strat();
 	void update_probabilities(Float probs[], size_t n_probs);
 };

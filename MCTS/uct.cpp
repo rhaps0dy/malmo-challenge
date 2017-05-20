@@ -16,11 +16,6 @@ static unordered_map<NodeSeri, array<int, N_ACTIONS+1> > _n_visits;
 
 static unordered_map<NodeSeri, array<Float, N_ACTIONS> > _value_sum;
 
-void ffi_clear_values() {
-	_n_visits.clear();
-	_value_sum.clear();
-}
-
 static
 Action best_child_action(array<int, N_ACTIONS+1> &n_visits,
 						 array<Float, N_ACTIONS> &value_sum,
@@ -85,14 +80,21 @@ Action uct_best_action(Node &root, int budget,
 					   Float constant, StrategyChooser &sc)
 {
 	assert(budget>0);
+	if(root.is_final)
+		return A_RIGHT;
+#ifndef NPROFILE
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+#endif
 	while(budget--) {
 		simulate_path(root, constant, sc);
+#ifndef NPROFILE
 		if(budget % 1000 == 0) {
 			high_resolution_clock::time_point t2 = high_resolution_clock::now();
-			cout << "1000 paths took: " << duration_cast<microseconds>( t2 - t1 ).count() << endl;
+			cout << "1000 paths took: " <<
+				duration_cast<microseconds>(t2 - t1).count() << endl;
 			t1 = high_resolution_clock::now();
 		}
+#endif
 	}
 	const NodeSeri root_seri = TIME_SERIALIZATION(root);
 	auto a = _n_visits.find(root_seri);
@@ -104,15 +106,19 @@ Action uct_best_action(Node &root, int budget,
 
 Action ffi_best_action(int budget, Float c,
 					   Float strat_probs[], size_t n_probs,
-					   int P_x, int P_y, int y1, int x1, Direction d1,
+					   int P_y, int P_x, int y1, int x1, Direction d1,
 					   int y0, int x0, Direction d0)
 {
+	static StrategyChooser sc(strat_probs, n_probs);
 	Node root(x0, y0, d0, x1, y1, d1, P_x, P_y);
-	StrategyChooser sc(root, strat_probs, n_probs);
+	sc.update_probabilities(strat_probs, n_probs);
 	_value_sum.clear();
 	_n_visits.clear();
-	root.print();
+#ifdef NDEBUG
+	return uct_best_action(root, budget, c, sc);
+#else
 	Action a = uct_best_action(root, budget, c, sc);
+	root.print();
 
 	root.make_child(a);
 	root.make_child(A_RIGHT);
@@ -122,8 +128,6 @@ Action ffi_best_action(int budget, Float c,
 	root.make_child(a);
 	root.print();
 
-
-#ifndef NDEBUG
 	vector<Node> ns;
 	ns.push_back(root);
 	for(size_t j=0; j < ns.size() && ns.size() < 20; j++) {
@@ -142,34 +146,39 @@ Action ffi_best_action(int budget, Float c,
 		cerr << "t = " << n.t << ", a = " << n.prev_action << ", value = " <<
 			value << endl;
 	}
-#endif
-
 	return a;
+#endif
 }
 
 
-//#ifndef NDEBUG
+#ifndef NHAVE_MAIN
 // test
 int main() {
 	Float ps[2] = {0., 1.};
 	constexpr int budget=10000;
 	if(ffi_best_action(budget, 2.0, ps, 2,
-					   6, 1, 4, 3, D_EAST, 2, 3, D_NORTH) != A_FRONT) {
+					   1, 6, 3, 4, D_EAST, 3, 2, D_NORTH) !=
+#ifndef NDEBUG
+	   A_FRONT
+#else
+	   A_LEFT
+#endif
+		) {
 		cout << "Failed 1st\n";
 	} else {
 		cout << "Succeeded 1st\n";
 	}
 	if(ffi_best_action(budget, 2.0, ps, 2,
-					   5, 3, 6, 3, D_SOUTH, 2, 3, D_EAST) != A_FRONT) {
+					   3, 5, 3, 6, D_SOUTH, 3, 2, D_EAST) != A_FRONT) {
 		cout << "Failed 2nd\n";
 	} else {
 		cout << "Succeeded 2nd\n";
 	}
 	return 0;
 }
-//#endif
+#endif
 
-void ffi_print_state(int P_x, int P_y, int y1, int x1, Direction d1,
+void ffi_print_state(int P_y, int P_x, int y1, int x1, Direction d1,
 					 int y0, int x0, Direction d0) {
 	Node n(x0, y0, d0, x1, y1, d1, P_x, P_y);
 	n.print();

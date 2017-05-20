@@ -45,8 +45,6 @@ uct.ffi_print_state.argtypes = [c_int, c_int,
                                 c_int, c_int, c_int]
 uct.ffi_print_state.restype = None
 
-uct.ffi_clear_values.argtypes = []
-uct.ffi_clear_values.restype = None
 
 PIG_OPTIMAL_COSTS_SHAPE = (5, 7, 5, 7, 4)
 uct.ffi_pig_optimal_costs.argtypes = []
@@ -62,7 +60,6 @@ class BayesianPlanner:
 
     def reset(self, strategy_proba):
         self._strats[:] = strategy_proba
-        uct.ffi_clear_values()
 
     def infer_strategy_proba(self, prev_state, cur_state):
         if prev_state[7] == cur_state[7]:
