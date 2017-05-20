@@ -6,6 +6,7 @@
 #include "uct.hpp"
 #include "strategy.hpp"
 #include "random.hpp"
+#include "path_cache.hpp"
 
 #include <chrono>
 #include <unordered_map>
@@ -66,7 +67,18 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 
 static Action
 default_policy_action(const Node& start_node) {
-    return static_cast<Action>(Random::uniform_int<size_t>(N_ACTIONS-1));
+    int option = Random::uniform_int<size_t>(N_ACTIONS-1);
+    PathCache& pathCache = PathCache::get();
+
+    if (option == 0) {
+        return static_cast<Action>(pathCache.location_action[start_node.ps[0].y][start_node.ps[0].x][start_node.pig.y][start_node.pig.x][start_node.ps[0].d]);
+    }
+    else if (option == 1) {
+        return static_cast<Action>(pathCache.exit_closest_action[start_node.ps[0].y][start_node.ps[0].x][start_node.ps[0].d]);
+    }
+    else {
+        return static_cast<Action>(Random::uniform_int<size_t>(N_ACTIONS-1));
+    }
 }
 
 #define TIME_SERIALIZATION(node) (node.get_serialization()*(MAX_T+1) + node.t)
