@@ -66,7 +66,7 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 
 static Action
 default_policy_action(const Node& start_node) {
-    return static_cast<Action>(Random::uniform_int<size_t>(N_ACTIONS));
+    return static_cast<Action>(Random::uniform_int<size_t>(N_ACTIONS-1));
 }
 
 #define TIME_SERIALIZATION(node) (node.get_serialization()*(MAX_T+1) + node.t)
