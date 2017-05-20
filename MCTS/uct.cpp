@@ -20,12 +20,12 @@ static unordered_map<NodeSeri, array<Float, N_ACTIONS> > _value_sum;
 // value_sum, or the node without any visits if it exists. This is equivalent to
 // taking one step in the UCT tree policy.
 //
-// The paremeter `no_action` is assigned value `true` if the action returned has
-// never been taken from the given node.
+// The paremeter `action_never_taken` is assigned value `true` if the action
+// returned has never been taken from the given node.
 static Action
 tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 				   array<Float, N_ACTIONS> &value_sum, const Float constant,
-				   bool &no_action) {
+				   bool &action_never_taken) {
 	size_t n_best=0;
 	Action best[N_ACTIONS];
 	Float max_val = -INFINITY;
@@ -40,6 +40,7 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 			}
 			max_val = NAN;
 			best[n_best++] = static_cast<Action>(i);
+			action_never_taken = true;
 		} else if(!isnan(max_val)) {
 			// Otherwise, if no other action has never been taken,
 			// calculate the UCT value
