@@ -12,6 +12,8 @@ setup(
     packages=find_packages(),
     ext_modules=[Extension('tsearch.libuct',
                            ['node.cpp', 'strategy.cpp', 'uct.cpp', 'path_cache.cpp'],
-                           define_macros=[('NDEBUG', '1')],
+                           define_macros=[('NDEBUG', '1'),
+                                          ('NPROFILE', '1'),
+                                          ('NHAVE_MAIN', '1')],
                            extra_compile_args=['-O3', '-flto', '-std=c++14'],
                            extra_link_args=['-O3', '-flto'],)])

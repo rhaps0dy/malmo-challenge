@@ -22,8 +22,7 @@ Strategy &StrategyChooser::random_strat()
 }
 
 
-StrategyChooser::StrategyChooser(Node &root, Float probs[],
-								 size_t n_probs) : p_strats(n_probs) {
+StrategyChooser::StrategyChooser(Float probs[], size_t n_probs) : p_strats() {
 	assert(n_probs == 2);
 	p_strats.emplace_back(make_pair(probs[0], unique_ptr<Strategy>(new StrategyRandom())));
 	p_strats.emplace_back(make_pair(probs[1], unique_ptr<Strategy>(new StrategyPig())));
