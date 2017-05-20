@@ -63,6 +63,11 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 	return best[Random::uniform_int<size_t>(n_best-1)];
 }
 
+static Action
+default_policy_action(const Node& start_node) {
+    return static_cast<Action>(Random::uniform_int<size_t>(N_ACTIONS));
+}
+
 #define TIME_SERIALIZATION(node) (node.get_serialization()*(MAX_T+1) + node.t)
 static
 void simulate_path(Node current, Float constant, StrategyChooser &sc) {
@@ -95,7 +100,7 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 			// to `true` if the tree policy should finish.
 			const Action best_a =
 				(using_default_policy ?
-				 /* default_policy_action(...) */ A_RIGHT :
+				 default_policy_action(current) :
 				 tree_policy_action(n_visits, value_sum, constant,
 									using_default_policy));
 
@@ -122,57 +127,6 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 		(*v) += value;
 }
 
-Node tree_policy(Node& root, Float constant, StrategyChooser& sc, std::vector< std::pair<Action, NodeSeri> >& path) {
-    Node current = root;
-
-    path.push_back({static_cast<Action>(-1), current.get_serialization()});
-
-    while (!current.is_final){
-        auto& childVisits = _n_visits[current.get_serialization()];
-        int childToExpand = -1;
-        for (int i = 0; i < N_ACTIONS && childToExpand == -1; ++i){
-            if (childVisits[i] == 0) {
-                childToExpand = i;
-            }
-        }
-
-        if (childToExpand == -1) { // all children expanded
-            Action bestAction = best_child_action(childVisits, _value_sum[current.get_serialization()], constant);
-            current.make_child(bestAction, true);
-            path.push_back({bestAction, current.get_serialization()});
-        }
-        else {
-            Action selected_action = static_cast<Action>(childToExpand);
-            current.make_child(selected_action, true);
-            path.push_back({selected_action, current.get_serialization()});
-            return current;
-        }
-    }
-
-    return current;
-}
-
-int default_policy(Node& start_node) {
-    Node current_node = start_node;
-
-    while (!current_node.is_final) {
-        Action random_action = static_cast<Action>(Random::uniform_int<size_t>(N_ACTIONS));
-        current_node.make_child(random_action, true);
-    }
-
-    return current_node.value;
-}
-
-void backpropagation(int reward, std::vector< std::pair<Action, NodeSeri> >& path) {
-    for (unsigned i = path.size() - 1; i > 0; --i) {
-        NodeSeri currentNodePrevAction = path[i].first;
-        NodeSeri parentNodeSeri = path[i -1].second;
-        int currentNumVisits = ++_n_visits[parentNodeSeri][currentNodePrevAction];
-        Float current_value = _value_sum[parentNodeSeri][currentNodePrevAction];
-        _value_sum[parentNodeSeri][currentNodePrevAction] += (Float(reward) - current_value) / Float(currentNumVisits);
-    }
-}
-
 Action uct_best_action(Node &root, int budget,
 					   Float constant, StrategyChooser &sc)
 {
@@ -183,11 +137,6 @@ Action uct_best_action(Node &root, int budget,
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 #endif
 	while(budget--) {
-        //std::vector< std::pair<Action, NodeSeri> > path;
-        //Node selected_node = tree_policy(root, constant, sc, path);
-        //int rand_reward = default_policy(selected_node);
-        //backpropagation(rand_reward, path);
-
 		simulate_path(root, constant, sc);
 #ifndef NPROFILE
 		if(budget % 1000 == 0) {
