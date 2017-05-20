@@ -62,19 +62,16 @@ class BayesianPlanner:
         self._strats[:] = strategy_proba
 
     def infer_strategy_proba(self, prev_state, cur_state):
-        if prev_state[7] == cur_state[7]:
-            action = A_FRONT
-        else:
-            if (prev_state[7]+1)%4 == cur_state[7]:
-                action = A_RIGHT
-            else:
-                action = A_LEFT
         # Focused
-        if (self._focused_costs[tuple(cur_state[:5])] <
-            self._focused_costs[tuple(prev_state[:5])]):
-            self._strats[0] *= 0.98
-        else:
-            self._strats[0] *= 0.01
+        try:
+            if (self._focused_costs[tuple(cur_state[:5])] <
+                self._focused_costs[tuple(prev_state[:5])]):
+                self._strats[0] *= 0.98
+            else:
+                self._strats[0] *= 0.01
+        except ValueError:
+            import pdb
+            pdb.set_trace()
         # Random
         self._strats[1] *= 1/3
         self._strats /= self._strats[0]+self._strats[1]
