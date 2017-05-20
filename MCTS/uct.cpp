@@ -66,19 +66,12 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 }
 
 static Action
-default_policy_action(const Node& start_node) {
-    int option = Random::uniform_int<size_t>(N_ACTIONS-1);
-    PathCache& pathCache = PathCache::get();
-
+default_policy_action(const Node& node, const int option) {
     if (option == 0) {
-        return static_cast<Action>(pathCache.location_action[start_node.ps[0].y][start_node.ps[0].x][start_node.pig.y][start_node.pig.x][start_node.ps[0].d]);
-    }
-    else if (option == 1) {
-        return static_cast<Action>(pathCache.exit_closest_action[start_node.ps[0].y][start_node.ps[0].x][start_node.ps[0].d]);
-    }
-    else {
-        return static_cast<Action>(Random::uniform_int<size_t>(N_ACTIONS-1));
-    }
+        return PathCache::get_action<0, OBJECTIVE_EXIT>(node);
+    } else {
+        return PathCache::get_action<0, OBJECTIVE_CORNER_PIG>(node);
+	}
 }
 
 #define TIME_SERIALIZATION(node) (node.get_serialization()*(MAX_T+1) + node.t)
@@ -97,6 +90,9 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 	// Whether our agent takes the tree policy or the default policy.
 	bool using_default_policy = false;
 
+	// Whether the default policy involves going to the exit or to the pig
+	const int option_default = Random::uniform_int<int>(1);
+
 	while(!current.is_final) {
 		if(current.t%2 == 0) {
 			// Get key of this node in the _n_visits and _value_sum maps. Then
@@ -113,7 +109,7 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 			// to `true` if the tree policy should finish.
 			const Action best_a =
 				(using_default_policy ?
-				 default_policy_action(current) :
+				 default_policy_action(current, option_default) :
 				 tree_policy_action(n_visits, value_sum, constant,
 									using_default_policy));
 

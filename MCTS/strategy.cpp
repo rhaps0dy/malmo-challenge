@@ -43,18 +43,8 @@ Action StrategyRandom::act(const Node &from) {
 	return static_cast<Action>(uniform3(generator));
 }
 
-#define GET(array_name) (PathCache::get().array_name[from.pig.y-1][from.pig.x-1] \
-						 [from.ps[1].y-1][from.ps[1].x-1][from.ps[1].d])
 Action StrategyPig::act(const Node &from) {
-#ifndef NDEBUG
-	assert(from.pig.y-1 >= 0 && from.pig.y-1 < PEN_H);
-	assert(from.pig.x-1 >= 0 && from.pig.x-1 < PEN_W);
-	assert(from.ps[1].y-1 >= 0 && from.ps[1].y-1 < PEN_H);
-	assert(from.ps[1].x-1 >= 0 && from.ps[1].x-1 < PEN_W);
-	assert(from.ps[1].d >= 0 && from.ps[1].d < N_DIRECTIONS);
-#endif
-	if(GET(location_cost) == 1)
+	if(PathCache::get_cost<1, OBJECTIVE_PIG>(from) == 1)
 		return A_RIGHT;
-	return static_cast<Action>(GET(location_action));
+	return PathCache::get_action<1, OBJECTIVE_PIG>(from);
 }
-#undef GET

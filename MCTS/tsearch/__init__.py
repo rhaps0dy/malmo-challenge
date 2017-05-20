@@ -46,16 +46,14 @@ uct.ffi_print_state.argtypes = [c_int, c_int,
 uct.ffi_print_state.restype = None
 
 
-PIG_OPTIMAL_COSTS_SHAPE = (5, 7, 5, 7, 4)
+PIG_OPTIMAL_COSTS_SHAPE = (7, 9, 7, 9, 4)
 uct.ffi_pig_optimal_costs.argtypes = []
 uct.ffi_pig_optimal_costs.restype = np.ctypeslib.ndpointer(
     dtype=np.uint8, shape=PIG_OPTIMAL_COSTS_SHAPE, flags='aligned, contiguous')
 
 class BayesianPlanner:
     def __init__(self):
-        self._focused_costs = np.pad(uct.ffi_pig_optimal_costs(),
-                                     ((1, 1), (1, 1), (1, 1), (1, 1), (0, 0)),
-                                     'constant')
+        self._focused_costs = uct.ffi_pig_optimal_costs()
         self._strats = np.zeros([2], dtype=switchable_np_float)
 
     def reset(self, strategy_proba):

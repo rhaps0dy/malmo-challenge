@@ -67,10 +67,10 @@ PathCache::PathCache() :
 		 static_cast<uint8_t>(0xff));
 	queue<Position> q;
 	for(int d=0; d<N_DIRECTIONS; d++) {
-		q.push({2, 0, d});
-		q.push({2, 6, d});
-		exit_closest_cost[2][0][d] = 0;
-		exit_closest_cost[2][6][d] = 0;
+		q.push({3, 1, d});
+		q.push({3, 7, d});
+		exit_closest_cost[3][1][d] = 0;
+		exit_closest_cost[3][7][d] = 0;
 	}
 
 	bfs_explore(q, exit_closest_cost, exit_closest_action);

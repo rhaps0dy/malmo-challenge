@@ -30,12 +30,12 @@ class BayesAgent(BaseAgent):
         cur_state = [None]*8
         for entity in symbolic_state[1]:
             if entity['name'] == 'Pig':
-                cur_state[0] = int(entity['x'])
-                cur_state[1] = int(entity['z'])
+                cur_state[0] = int(entity['z'])
+                cur_state[1] = int(entity['x'])
             else:
                 i = (int(entity['name'][-1])-1)*3
-                cur_state[i+2] = int(entity['x'])
-                cur_state[i+3] = int(entity['z'])
+                cur_state[i+2] = int(entity['z'])
+                cur_state[i+3] = int(entity['x'])
                 # Minecraft yaw to 0=north, 1=east.. taken from agent.py
                 cur_state[i+4] = ((((int(entity['yaw']) - 45) % 360) // 90) - 1) % 4
 

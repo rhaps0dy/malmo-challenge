@@ -1,18 +1,62 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
 
 #include "common.hpp"
+#include "node.hpp"
 
 using namespace std;
 
-constexpr int PEN_H = WALLS_H-2;
-constexpr int PEN_W = WALLS_W-2;
+constexpr int PEN_H = WALLS_H;
+constexpr int PEN_W = WALLS_W;
 
-struct PathCache {
+enum Objective {
+	OBJECTIVE_EXIT,
+	OBJECTIVE_PIG,
+	OBJECTIVE_CORNER_PIG
+};
+
+class PathCache {
+public:
 	static PathCache &get() {
 		static PathCache instance;
 		return instance;
+	}
+
+	template<const int role, const Objective obj> static inline Action
+	get_action(const Node &n) {
+		assert(n.ps[role].y >= 0 && n.ps[role].y < PEN_H);
+		assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);
+		assert(n.ps[role].d >= 0 && n.ps[role].d < N_DIRECTIONS);
+		if(obj == OBJECTIVE_EXIT) {
+			return static_cast<Action>(get().exit_closest_action
+									   [n.ps[role].y][n.ps[role].x]
+									   [n.ps[role].d]);
+		} else {
+			assert(n.pig.y >= 0 && n.pig.y < PEN_H);
+			assert(n.pig.x >= 0 && n.pig.x < PEN_W);
+			return static_cast<Action>(get().location_action
+									   [n.pig.y][n.pig.x]
+									   [n.ps[role].y][n.ps[role].x]
+									   [n.ps[role].d]);
+		}
+	}
+	template<const int role, const Objective obj> static inline uint8_t
+	get_cost(const Node &n) {
+		assert(n.ps[role].y >= 0 && n.ps[role].y < PEN_H);
+		assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);
+		assert(n.ps[role].d >= 0 && n.ps[role].d < N_DIRECTIONS);
+		if(obj == OBJECTIVE_EXIT) {
+			return get().exit_closest_cost
+				[n.ps[role].y][n.ps[role].x][n.ps[role].d];
+		} else {
+			assert(n.pig.y >= 0 && n.pig.y < PEN_H);
+			assert(n.pig.x >= 0 && n.pig.x < PEN_W);
+			return get().location_cost[n.pig.y][n.pig.x]
+									  [n.ps[role].y][n.ps[role].x]
+									  [n.ps[role].d];
+		}
 	}
 
 	uint8_t location_cost[PEN_H][PEN_W][PEN_H][PEN_W][N_DIRECTIONS];
@@ -21,8 +65,9 @@ struct PathCache {
 	uint8_t exit_closest_cost[PEN_H][PEN_W][N_DIRECTIONS];
 	uint8_t exit_closest_action[PEN_H][PEN_W][N_DIRECTIONS];
 
-	PathCache();
 private:
+	PathCache();
+
 	PathCache(PathCache const&) = delete;
 	void operator=(PathCache const&) = delete;
 };
