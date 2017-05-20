@@ -89,11 +89,18 @@ class BayesianPlanner:
 
 
 if __name__ == '__main__':
-    prev_state = [2, 5, 4, 5, D_WEST, 2, 2, D_SOUTH]
-    cur_state = [2, 5, 3, 5, D_WEST, 2, 2, D_SOUTH]
+    prev_state = [5, 2, 5, 4, D_WEST, 2, 2, D_SOUTH]
+    cur_state = [5, 2, 5, 3, D_WEST, 2, 2, D_SOUTH]
+    cur_state2 = [5, 2, 5, 4, D_SOUTH, 2, 2, D_SOUTH]
     bp = BayesianPlanner()
     bp.reset([0.75, 0.25])
     bp.infer_strategy_proba(prev_state, cur_state)
     print(bp._strats)
-    print(bp.plan_best_action(cur_state))
+    bp.infer_strategy_proba(prev_state, cur_state2)
+    print(bp._strats)
+
+    bp.print_state(prev_state)
+    bp.print_state(cur_state)
+    bp.print_state(cur_state2)
+    print(bp.plan_best_action(cur_state, budget=100000))
     print('===')
