@@ -67,6 +67,11 @@ public:
 	uint8_t exit_closest_cost[PEN_H][PEN_W][N_DIRECTIONS];
 	uint8_t exit_closest_action[PEN_H][PEN_W][N_DIRECTIONS];
 
+	// The location the player should pursue to corner the pig, if the pig is in
+	// [0,1] and the other player is in [2,3], looking to [4]
+	uint8_t pig_corner_cost[PEN_H][PEN_W][PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS];
+	uint8_t pig_corner_action[PEN_H][PEN_W][PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS];
+
 private:
 	PathCache();
 

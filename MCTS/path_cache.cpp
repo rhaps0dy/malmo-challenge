@@ -2,6 +2,8 @@
 
 #include <queue>
 #include <iostream>
+#include <utility>
+#include <vector>
 
 struct Position { int y,x,d; };
 
@@ -44,24 +46,155 @@ bfs_explore(queue<Position> &q,
 	}
 }
 
+static void
+print_array(uint8_t arr[PEN_H][PEN_W][N_DIRECTIONS]) {
+	for(int d=0; d<N_DIRECTIONS; d++) {
+		cout << "d=" << d << endl;
+		for(int y=0; y<PEN_H; y++) {
+			for(int x=0; x<PEN_W; x++)
+				cout << (int)(arr[y][x][d]>200 ? 0 : arr[y][x][d]) << " ";
+			cout << endl;
+		}
+		cout << endl;
+	}
+}
+
+#define FOR(var, limit) for(int var=0; var<limit; var++)
+
+static uint8_t
+get_min_directions(vector<Direction> &min_directions, uint8_t loc_orient_cost[PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS],
+				   int pig_y, int pig_x, int p_y, int p_x, int p_d) {
+	uint8_t min_direction_cost=0xff;
+	min_directions.clear();
+	FOR(pig_d, N_DIRECTIONS) {
+		if(WALLS[pig_y+PIG_AROUND_OFFSETS[pig_d][0]]
+		   [pig_x+PIG_AROUND_OFFSETS[pig_d][1]]) {
+			if(loc_orient_cost[pig_y][pig_x][pig_d][p_y][p_x][p_d] < min_direction_cost) {
+				min_direction_cost = loc_orient_cost[pig_y][pig_x][pig_d][p_y][p_x][p_d];
+				min_directions.clear();
+				min_directions.push_back(static_cast<Direction>(pig_d));
+			} else if(loc_orient_cost[pig_y][pig_x][pig_d][p_y][p_x][p_d] == min_direction_cost) {
+				min_directions.push_back(static_cast<Direction>(pig_d));
+			}
+		}
+	}
+	return min_direction_cost;
+}
+
 PathCache::PathCache() :
 	location_cost{}, location_action{}, exit_closest_cost{},
 	exit_closest_action{}
 {
+	// The cost and action to go to the square adjacent in direction (2) to a
+	// location ([1], [0]), facing direction ([2]+2) % 4.
+	// An intermediate result for location_{cost,action} and pig_corner_location
+	uint8_t loc_orient_cost[PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS];
+	uint8_t loc_orient_action[PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS];
+
+	fill(&loc_orient_cost[0][0][0][0][0][0], &loc_orient_cost[0][0][0][0][0][0] +
+		 sizeof(loc_orient_cost)/sizeof(loc_orient_cost[0][0][0][0][0][0]),
+		 static_cast<uint8_t>(0xfe)); // 0xfe because we will sum 1 later
+	FOR(pig_y, PEN_H) {
+		FOR(pig_x, PEN_W) {
+			if(!WALLS[pig_y][pig_x])
+				continue;
+			queue<Position> q;
+			FOR(d, N_DIRECTIONS) {
+				const int y = pig_y+PIG_AROUND_OFFSETS[d][0];
+				const int x = pig_x+PIG_AROUND_OFFSETS[d][1];
+				if(!WALLS[y][x])
+					continue;
+				const int _d = (d+2)%4;
+				q.push({y, x, _d});
+				loc_orient_cost[pig_y][pig_x][d][y][x][_d] = 0;
+				bfs_explore(q, loc_orient_cost[pig_y][pig_x][d],
+							loc_orient_action[pig_y][pig_x][d]);
+			}
+		}
+	}
+
+	// The cost and action of going to a location
 	fill(&location_cost[0][0][0][0][0], &location_cost[0][0][0][0][0] +
 		 sizeof(location_cost)/sizeof(location_cost[0][0][0][0][0]),
 		 static_cast<uint8_t>(0xff));
-	for(int pig_y=0; pig_y<PEN_H; pig_y++)
-		for(int pig_x=0; pig_x<PEN_W; pig_x++) {
-			queue<Position> q;
-			for(int d=0; d<N_DIRECTIONS; d++) {
-				q.push({pig_y, pig_x, d});
-				location_cost[pig_y][pig_x][pig_y][pig_x][d] = 0;
-			}
-			bfs_explore(q, location_cost[pig_y][pig_x],
-						location_action[pig_y][pig_x]);
-		}
+	FOR(pig_y, PEN_H) {
+		FOR(pig_x, PEN_W) {
+			FOR(pig_d, N_DIRECTIONS) {
+				FOR(y, PEN_H) {
+					FOR(x, PEN_W) {
+						FOR(d, N_DIRECTIONS) {
+							const auto LOC = loc_orient_cost[pig_y][pig_x][pig_d][y][x][d]+1;
+							if(LOC < location_cost[pig_y][pig_x][y][x][d]) {
+								location_cost[pig_y][pig_x][y][x][d] = LOC;
+								location_action[pig_y][pig_x][y][x][d] =
+									loc_orient_action[pig_y][pig_x][pig_d][y][x][d];
+							}
+	}}}}}}
 
+	fill(&pig_corner_cost[0][0][0][0][0][0][0][0], &pig_corner_cost[0][0][0][0][0][0][0][0] +
+		 sizeof(pig_corner_cost)/sizeof(pig_corner_cost[0][0][0][0][0][0][0][0]),
+		 static_cast<uint8_t>(0xff));
+	FOR(pig_y, PEN_H) {
+		FOR(pig_x, PEN_W) {
+			if(!WALLS[pig_y][pig_x])
+				continue;
+			FOR(p1_y, PEN_H) {
+				FOR(p1_x, PEN_W) {
+					if(!WALLS[p1_y][p1_x] || (p1_y==pig_y && p1_x==pig_x))
+						continue;
+					FOR(p1_d, N_DIRECTIONS) {
+						// First, we determine which are the square/s adjacent
+						// to the pig that have no wall and is/are closest to
+						// the player we do NOT control
+						static vector<Direction> min_directions_p1;
+						get_min_directions(min_directions_p1, loc_orient_cost, pig_y, pig_x, p1_y, p1_x, p1_d);
+						// There should be at least 1 of them.
+						assert(min_directions_p1.size() >= 1);
+						// It should be sorted
+						for(size_t i=1; i<min_directions_p1.size(); i++)
+							assert(min_directions_p1[i] > min_directions_p1[i-1]);
+
+						// Now calculate the directions which are both: not the
+						// closest to p1 and accessible
+						static vector<Direction> feasible_directions_p0;
+						feasible_directions_p0.clear();
+						size_t i=0;
+						FOR(d, N_DIRECTIONS) {
+							if(d == min_directions_p1[i]) {
+								i++;
+							} else if(WALLS[pig_y+PIG_AROUND_OFFSETS[d][0]][pig_x+PIG_AROUND_OFFSETS[d][1]]) {
+								feasible_directions_p0.push_back(static_cast<Direction>(d));
+							}
+						}
+
+						if(feasible_directions_p0.size() == 0) {
+							// If no directions are so feasible, just go to the pig.
+							FOR(p0_y, PEN_H) {
+								FOR(p0_x, PEN_W) {
+									FOR(p0_d, N_DIRECTIONS) {
+										pig_corner_cost[pig_y][pig_x][p1_y][p1_x][p1_d][p0_y][p0_x][p0_d] =
+											location_cost[pig_y][pig_x][p0_y][p0_x][p0_d];
+										pig_corner_action[pig_y][pig_x][p1_y][p1_x][p1_d][p0_y][p0_x][p0_d] =
+											location_action[pig_y][pig_x][p0_y][p0_x][p0_d];
+									}
+								}
+							}
+						} else {
+							// otherwise take all the feasible ones
+							queue<Position> q;
+							for(Direction d: feasible_directions_p0) {
+								FOR(p0_d, N_DIRECTIONS) {
+									q.push({pig_y+PIG_AROUND_OFFSETS[d][0],
+											pig_x+PIG_AROUND_OFFSETS[d][1], p0_d});
+								}
+							}
+							bfs_explore(q,
+										pig_corner_cost[pig_y][pig_x][p1_y][p1_x][p1_d],
+										pig_corner_action[pig_y][pig_x][p1_y][p1_x][p1_d]);
+						}
+	}}}}}
+
+	// Cost and action to go to the closest exit
 	fill(&exit_closest_cost[0][0][0], &exit_closest_cost[0][0][0] +
 		 sizeof(exit_closest_cost)/sizeof(exit_closest_cost[0][0][0]),
 		 static_cast<uint8_t>(0xff));
