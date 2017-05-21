@@ -44,7 +44,7 @@ Action StrategyRandom::act(const Node &from) {
 }
 
 Action StrategyPig::act(const Node &from) {
-	if(PathCache::get_cost<1, OBJECTIVE_PIG>(from) == 1)
+	if(PathCache::data<1, OBJECTIVE_PIG, TYPE_COST>(from) == 1)
 		return A_RIGHT;
-	return PathCache::get_action<1, OBJECTIVE_PIG>(from);
+	return static_cast<Action>(PathCache::data<1, OBJECTIVE_PIG, TYPE_ACTION>(from));
 }

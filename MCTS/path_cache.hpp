@@ -17,6 +17,11 @@ enum Objective {
 	OBJECTIVE_CORNER_PIG
 };
 
+enum DataType {
+	TYPE_ACTION,
+	TYPE_COST
+};
+
 class PathCache {
 public:
 	static PathCache &get() {
@@ -24,38 +29,43 @@ public:
 		return instance;
 	}
 
-	template<const int role, const Objective obj> static inline Action
-	get_action(const Node &n) {
+	template<constexpr int role, constexpr Objective obj, constexpr DataType type> static inline uint8_t
+	data(const Node &n) {
 		assert(n.ps[role].y >= 0 && n.ps[role].y < PEN_H);
 		assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);
 		assert(n.ps[role].d >= 0 && n.ps[role].d < N_DIRECTIONS);
 		if(obj == OBJECTIVE_EXIT) {
-			return static_cast<Action>(get().exit_closest_action
-									   [n.ps[role].y][n.ps[role].x]
-									   [n.ps[role].d]);
+			assert(get().exit_closest_cost[n.ps[role].y]
+				   [n.ps[role].x][n.ps[role].d] < 0xf0);
+			return ((type == TYPE_ACTION
+					? get().exit_closest_action
+					: get().exit_closest_cost)
+				[n.ps[role].y][n.ps[role].x][n.ps[role].d]);
 		} else {
 			assert(n.pig.y >= 0 && n.pig.y < PEN_H);
 			assert(n.pig.x >= 0 && n.pig.x < PEN_W);
-			return static_cast<Action>(get().location_action
-									   [n.pig.y][n.pig.x]
-									   [n.ps[role].y][n.ps[role].x]
-									   [n.ps[role].d]);
-		}
-	}
-	template<const int role, const Objective obj> static inline uint8_t
-	get_cost(const Node &n) {
-		assert(n.ps[role].y >= 0 && n.ps[role].y < PEN_H);
-		assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);
-		assert(n.ps[role].d >= 0 && n.ps[role].d < N_DIRECTIONS);
-		if(obj == OBJECTIVE_EXIT) {
-			return get().exit_closest_cost
-				[n.ps[role].y][n.ps[role].x][n.ps[role].d];
-		} else {
-			assert(n.pig.y >= 0 && n.pig.y < PEN_H);
-			assert(n.pig.x >= 0 && n.pig.x < PEN_W);
-			return get().location_cost[n.pig.y][n.pig.x]
-									  [n.ps[role].y][n.ps[role].x]
-									  [n.ps[role].d];
+			if(obj == OBJECTIVE_PIG) {
+				assert(get().location_cost[n.pig.y][n.pig.x]
+					   [n.ps[role].y][n.ps[role].x]
+					   [n.ps[role].d] < 0xf0);
+				return ((type == TYPE_ACTION
+						 ? get().location_action
+						 : get().location_cost)
+						[n.pig.y][n.pig.x][n.ps[role].y][n.ps[role].x][n.ps[role].d]);
+			} else {
+				constexpr int role2 = (role+1) %2;
+				assert(n.ps[role].y >= 0 && n.ps[role].y < PEN_H);
+				assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);
+				assert(n.ps[role].d >= 0 && n.ps[role].d < N_DIRECTIONS);
+				assert(get().pig_corner_cost[n.pig.y][n.pig.x]
+					   [n.ps[role2].y][n.ps[role2].x][n.ps[role2].d]
+					   [n.ps[role].y][n.ps[role].x][n.ps[role].d] < 0xf0);
+				return ((type == TYPE_ACTION
+						 ? get().pig_corner_action
+						 : get().pig_corner_cost)[n.pig.y][n.pig.x]
+						[n.ps[role2].y][n.ps[role2].x][n.ps[role2].d]
+						[n.ps[role].y][n.ps[role].x][n.ps[role].d]);
+			}
 		}
 	}
 

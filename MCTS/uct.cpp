@@ -68,9 +68,9 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 static Action
 default_policy_action(const Node& node, const int option) {
     if (option == 0) {
-        return PathCache::get_action<0, OBJECTIVE_EXIT>(node);
+        return static_cast<Action>(PathCache::data<0, OBJECTIVE_EXIT, TYPE_ACTION>(node));
     } else {
-        return PathCache::get_action<0, OBJECTIVE_CORNER_PIG>(node);
+        return static_cast<Action>(PathCache::data<0, OBJECTIVE_CORNER_PIG, TYPE_ACTION>(node));
 	}
 }
 
