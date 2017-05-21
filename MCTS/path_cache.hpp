@@ -29,7 +29,7 @@ public:
 		return instance;
 	}
 
-	template<constexpr int role, constexpr Objective obj, constexpr DataType type> static inline uint8_t
+	template<int role, Objective obj, DataType type> static inline uint8_t
 	data(const Node &n) {
 		assert(n.ps[role].y >= 0 && n.ps[role].y < PEN_H);
 		assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);

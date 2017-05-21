@@ -1,6 +1,6 @@
 #include "path_cache.hpp"
 
-#include <queue>
+#include <deque>
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -8,26 +8,28 @@
 struct Position { int y,x,d; };
 
 static void
-bfs_explore(queue<Position> &q,
+bfs_explore(deque<Position> &q,
 			uint8_t cost[PEN_H][PEN_W][N_DIRECTIONS],
 			uint8_t action[PEN_H][PEN_W][N_DIRECTIONS]) {
+	for(auto p: q)
+		cost[p.y][p.x][p.d] = 0;
 	while(!q.empty()) {
 		Position p = q.front();
-		q.pop();
+		q.pop_front();
 		auto cur_cost = cost[p.y][p.x][p.d];
 		// The turning directions are reversed
 		const int d_right = (p.d+4-1)%4;
 		if(cost[p.y][p.x][d_right] > cur_cost+1) {
 			cost[p.y][p.x][d_right] = cur_cost+1;
 			action[p.y][p.x][d_right] = A_RIGHT;
-			q.push({p.y, p.x, d_right});
+			q.push_back({p.y, p.x, d_right});
 		}
 
 		const int d_left = (p.d+1)%4;
 		if(cost[p.y][p.x][d_left] > cur_cost+1) {
 			cost[p.y][p.x][d_left] = cur_cost+1;
 			action[p.y][p.x][d_left] = A_LEFT;
-			q.push({p.y, p.x, d_left});
+			q.push_back({p.y, p.x, d_left});
 		}
 
 		// The moving is also reversed
@@ -41,7 +43,7 @@ bfs_explore(queue<Position> &q,
 		   WALLS[p.y][p.x] && cost[p.y][p.x][p.d] > cur_cost) {
 			cost[p.y][p.x][p.d] = cur_cost+1;
 			action[p.y][p.x][p.d] = A_FRONT;
-			q.push(p);
+			q.push_back(p);
 		}
 	}
 }
@@ -49,10 +51,10 @@ bfs_explore(queue<Position> &q,
 static void
 print_array(uint8_t arr[PEN_H][PEN_W][N_DIRECTIONS]) {
 	for(int d=0; d<N_DIRECTIONS; d++) {
-		cout << "d=" << d << endl;
+		cout << "Direction " << d << ":\n";
 		for(int y=0; y<PEN_H; y++) {
 			for(int x=0; x<PEN_W; x++)
-				cout << (int)(arr[y][x][d]>200 ? 0 : arr[y][x][d]) << " ";
+				cout << static_cast<int>(arr[y][x][d]) << " ";
 			cout << endl;
 		}
 		cout << endl;
@@ -98,15 +100,14 @@ PathCache::PathCache() :
 		FOR(pig_x, PEN_W) {
 			if(!WALLS[pig_y][pig_x])
 				continue;
-			queue<Position> q;
+			deque<Position> q;
 			FOR(d, N_DIRECTIONS) {
 				const int y = pig_y+PIG_AROUND_OFFSETS[d][0];
 				const int x = pig_x+PIG_AROUND_OFFSETS[d][1];
 				if(!WALLS[y][x])
 					continue;
 				const int _d = (d+2)%4;
-				q.push({y, x, _d});
-				loc_orient_cost[pig_y][pig_x][d][y][x][_d] = 0;
+				q.push_back({y, x, _d});
 				bfs_explore(q, loc_orient_cost[pig_y][pig_x][d],
 							loc_orient_action[pig_y][pig_x][d]);
 			}
@@ -140,9 +141,12 @@ PathCache::PathCache() :
 				continue;
 			FOR(p1_y, PEN_H) {
 				FOR(p1_x, PEN_W) {
-					if(!WALLS[p1_y][p1_x] || (p1_y==pig_y && p1_x==pig_x))
+					if(!WALLS[p1_y][p1_x])
 						continue;
 					FOR(p1_d, N_DIRECTIONS) {
+						if(pig_y==1 && pig_x==6 && p1_y==3 && p1_x==5) {
+							cout << p1_d << " BINGO\n";
+						}
 						// First, we determine which are the square/s adjacent
 						// to the pig that have no wall and is/are closest to
 						// the player we do NOT control
@@ -150,6 +154,7 @@ PathCache::PathCache() :
 						get_min_directions(min_directions_p1, loc_orient_cost, pig_y, pig_x, p1_y, p1_x, p1_d);
 						// There should be at least 1 of them.
 						assert(min_directions_p1.size() >= 1);
+						assert(min_directions_p1.size() <= 2 || (pig_y==p1_y && pig_x==p1_x));
 						// It should be sorted
 						for(size_t i=1; i<min_directions_p1.size(); i++)
 							assert(min_directions_p1[i] > min_directions_p1[i-1]);
@@ -160,7 +165,7 @@ PathCache::PathCache() :
 						feasible_directions_p0.clear();
 						size_t i=0;
 						FOR(d, N_DIRECTIONS) {
-							if(d == min_directions_p1[i]) {
+							if(i<min_directions_p1.size() && d == min_directions_p1[i]) {
 								i++;
 							} else if(WALLS[pig_y+PIG_AROUND_OFFSETS[d][0]][pig_x+PIG_AROUND_OFFSETS[d][1]]) {
 								feasible_directions_p0.push_back(static_cast<Direction>(d));
@@ -181,10 +186,10 @@ PathCache::PathCache() :
 							}
 						} else {
 							// otherwise take all the feasible ones
-							queue<Position> q;
+							deque<Position> q;
 							for(Direction d: feasible_directions_p0) {
 								FOR(p0_d, N_DIRECTIONS) {
-									q.push({pig_y+PIG_AROUND_OFFSETS[d][0],
+									q.push_back({pig_y+PIG_AROUND_OFFSETS[d][0],
 											pig_x+PIG_AROUND_OFFSETS[d][1], p0_d});
 								}
 							}
@@ -198,26 +203,17 @@ PathCache::PathCache() :
 	fill(&exit_closest_cost[0][0][0], &exit_closest_cost[0][0][0] +
 		 sizeof(exit_closest_cost)/sizeof(exit_closest_cost[0][0][0]),
 		 static_cast<uint8_t>(0xff));
-	queue<Position> q;
+	deque<Position> q;
 	for(int d=0; d<N_DIRECTIONS; d++) {
-		q.push({3, 1, d});
-		q.push({3, 7, d});
-		exit_closest_cost[3][1][d] = 0;
-		exit_closest_cost[3][7][d] = 0;
+		q.push_back({3, 1, d});
+		q.push_back({3, 7, d});
 	}
 
 	bfs_explore(q, exit_closest_cost, exit_closest_action);
 
 #ifndef NDEBUG
-	for(int d=0; d<4; d++) {
-		cout << "Direction " << d << ":\n";
-		for(int pig_y=0; pig_y<PEN_H; pig_y++) {
-			for(int pig_x=0; pig_x<PEN_W; pig_x++) {
-				cout << (int)exit_closest_cost[pig_y][pig_x][d] << ", ";
-			}
-			cout << endl;
-		}
-	}
+	print_array(pig_corner_cost[1][6][3][5][D_EAST]);
+	print_array(exit_closest_cost);
 #endif
 }
 
