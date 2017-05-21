@@ -5,6 +5,9 @@
 #include <utility>
 #include <vector>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 struct Position { int y,x,d; };
 
 static void
@@ -91,7 +94,7 @@ PathCache::PathCache() :
 	// location ([1], [0]), facing direction ([2]+2) % 4.
 	// An intermediate result for location_{cost,action} and pig_corner_location
 	uint8_t loc_orient_cost[PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS];
-	uint8_t loc_orient_action[PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS];
+	uint8_t loc_orient_action[PEN_H][PEN_W][N_DIRECTIONS][PEN_H][PEN_W][N_DIRECTIONS] = {};
 
 	fill(&loc_orient_cost[0][0][0][0][0][0], &loc_orient_cost[0][0][0][0][0][0] +
 		 sizeof(loc_orient_cost)/sizeof(loc_orient_cost[0][0][0][0][0][0]),
@@ -129,6 +132,7 @@ PathCache::PathCache() :
 								location_cost[pig_y][pig_x][y][x][d] = LOC;
 								location_action[pig_y][pig_x][y][x][d] =
 									loc_orient_action[pig_y][pig_x][pig_d][y][x][d];
+								assert(loc_orient_action[pig_y][pig_x][pig_d][y][x][d] < N_ACTIONS);
 							}
 	}}}}}}
 
@@ -144,9 +148,6 @@ PathCache::PathCache() :
 					if(!WALLS[p1_y][p1_x])
 						continue;
 					FOR(p1_d, N_DIRECTIONS) {
-						if(pig_y==1 && pig_x==6 && p1_y==3 && p1_x==5) {
-							cout << p1_d << " BINGO\n";
-						}
 						// First, we determine which are the square/s adjacent
 						// to the pig that have no wall and is/are closest to
 						// the player we do NOT control
@@ -181,6 +182,7 @@ PathCache::PathCache() :
 											location_cost[pig_y][pig_x][p0_y][p0_x][p0_d];
 										pig_corner_action[pig_y][pig_x][p1_y][p1_x][p1_d][p0_y][p0_x][p0_d] =
 											location_action[pig_y][pig_x][p0_y][p0_x][p0_d];
+										assert(location_action[pig_y][pig_x][p0_y][p0_x][p0_d] < N_ACTIONS);
 									}
 								}
 							}
@@ -212,8 +214,14 @@ PathCache::PathCache() :
 	bfs_explore(q, exit_closest_cost, exit_closest_action);
 
 #ifndef NDEBUG
-	print_array(pig_corner_cost[1][6][3][5][D_EAST]);
-	print_array(exit_closest_cost);
+//	print_array(pig_corner_cost[1][6][3][5][D_EAST]);
+//	print_array(exit_closest_cost);
+//	print_array(location_cost[1][6]);
+//	print_array(location_action[1][6]);
+//	print_array(pig_corner_cost[5][3][3][3][2]);
+//	print_array(pig_corner_action[5][3][3][3][2]);
+//	print_array(pig_corner_action[3][7][4][6][1]);
+	cout << "Current PID:" << ::getpid() << endl;
 #endif
 }
 

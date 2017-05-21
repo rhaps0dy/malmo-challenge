@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cassert>
+#include <iostream>
 
 #include "common.hpp"
 #include "node.hpp"
@@ -22,6 +23,11 @@ enum DataType {
 	TYPE_COST
 };
 
+#define PASSERT(text, cond) do { \
+	if(!(cond)) { \
+	cout << "BAD ACTION AT " text ":" << n.pig.y << ' ' << n.pig.x << ' ' << n.ps[1].y << ' ' << n.ps[1].x << ' ' << n.ps[1].d << ' ' << n.ps[0].y << ' ' << n.ps[0].x << ' ' << n.ps[0].d<< "; role=" << role << endl; \
+	} } while(false)
+
 class PathCache {
 public:
 	static PathCache &get() {
@@ -35,8 +41,10 @@ public:
 		assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);
 		assert(n.ps[role].d >= 0 && n.ps[role].d < N_DIRECTIONS);
 		if(obj == OBJECTIVE_EXIT) {
-			assert(get().exit_closest_cost[n.ps[role].y]
+			PASSERT("exit cost", get().exit_closest_cost[n.ps[role].y]
 				   [n.ps[role].x][n.ps[role].d] < 0xf0);
+			PASSERT("exit action", get().exit_closest_action[n.ps[role].y]
+					[n.ps[role].x][n.ps[role].d] < N_ACTIONS);
 			return ((type == TYPE_ACTION
 					? get().exit_closest_action
 					: get().exit_closest_cost)
@@ -45,21 +53,26 @@ public:
 			assert(n.pig.y >= 0 && n.pig.y < PEN_H);
 			assert(n.pig.x >= 0 && n.pig.x < PEN_W);
 			if(obj == OBJECTIVE_PIG) {
-				assert(get().location_cost[n.pig.y][n.pig.x]
+				PASSERT("location cost", get().location_cost[n.pig.y][n.pig.x]
 					   [n.ps[role].y][n.ps[role].x]
 					   [n.ps[role].d] < 0xf0);
+				PASSERT("location actdion", get().location_action[n.pig.y][n.pig.x][n.ps[role].y]
+						[n.ps[role].x][n.ps[role].d] < N_ACTIONS);
 				return ((type == TYPE_ACTION
 						 ? get().location_action
 						 : get().location_cost)
 						[n.pig.y][n.pig.x][n.ps[role].y][n.ps[role].x][n.ps[role].d]);
 			} else {
 				constexpr int role2 = (role+1) %2;
-				assert(n.ps[role].y >= 0 && n.ps[role].y < PEN_H);
-				assert(n.ps[role].x >= 0 && n.ps[role].x < PEN_W);
-				assert(n.ps[role].d >= 0 && n.ps[role].d < N_DIRECTIONS);
-				assert(get().pig_corner_cost[n.pig.y][n.pig.x]
+				assert(n.ps[role2].y >= 0 && n.ps[role2].y < PEN_H);
+				assert(n.ps[role2].x >= 0 && n.ps[role2].x < PEN_W);
+				assert(n.ps[role2].d >= 0 && n.ps[role2].d < N_DIRECTIONS);
+				PASSERT("corner cost", get().pig_corner_cost[n.pig.y][n.pig.x]
 					   [n.ps[role2].y][n.ps[role2].x][n.ps[role2].d]
 					   [n.ps[role].y][n.ps[role].x][n.ps[role].d] < 0xf0);
+				PASSERT("corner action", get().pig_corner_action[n.pig.y][n.pig.x]
+				   [n.ps[role2].y][n.ps[role2].x][n.ps[role2].d]
+				   [n.ps[role].y][n.ps[role].x][n.ps[role].d] < N_ACTIONS);
 				return ((type == TYPE_ACTION
 						 ? get().pig_corner_action
 						 : get().pig_corner_cost)[n.pig.y][n.pig.x]

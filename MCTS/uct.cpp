@@ -177,13 +177,13 @@ Action ffi_best_action(int budget, Float c,
 #ifdef NDEBUG
 	return uct_best_action(root, budget, c, sc);
 #else
-	Action a = uct_best_action(root, budget, c, sc);
+	const Action final_action = uct_best_action(root, budget, c, sc);
 	root.print();
 
-	root.make_child(a);
+	root.make_child(final_action);
 	root.make_child(A_RIGHT);
 	root.print();
-	a = uct_best_action(root, budget, c, sc);
+	Action a = uct_best_action(root, budget, c, sc);
 
 	root.make_child(a);
 	root.print();
@@ -206,7 +206,7 @@ Action ffi_best_action(int budget, Float c,
 		cerr << "t = " << n.t << ", a = " << n.prev_action << ", value = " <<
 			value << endl;
 	}
-	return a;
+	return final_action;
 #endif
 }
 
