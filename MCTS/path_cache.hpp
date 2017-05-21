@@ -59,9 +59,11 @@ public:
 		}
 	}
 
+	// How much does it cost and what action to take to go from [2,3; 4] to [0,1]
 	uint8_t location_cost[PEN_H][PEN_W][PEN_H][PEN_W][N_DIRECTIONS];
 	uint8_t location_action[PEN_H][PEN_W][PEN_H][PEN_W][N_DIRECTIONS];
 
+	// How to go to the closest exit and how much does it cost, from [0,1; 2]
 	uint8_t exit_closest_cost[PEN_H][PEN_W][N_DIRECTIONS];
 	uint8_t exit_closest_action[PEN_H][PEN_W][N_DIRECTIONS];
 

@@ -36,7 +36,7 @@ bfs_explore(queue<Position> &q,
 		case D_EAST: p.x -= 1; break;
 		}
 		if(0 <= p.y && p.y < PEN_H && 0 <= p.x && p.x < PEN_W &&
-		   WALLS[p.y+1][p.x+1] && cost[p.y][p.x][p.d] > cur_cost) {
+		   WALLS[p.y][p.x] && cost[p.y][p.x][p.d] > cur_cost) {
 			cost[p.y][p.x][p.d] = cur_cost+1;
 			action[p.y][p.x][p.d] = A_FRONT;
 			q.push(p);
