@@ -8,24 +8,15 @@
 
 using namespace std;
 
-struct Strategy {
-	virtual Action act(const Node &from) = 0;
-	virtual void reset() {}
-};
+typedef Action(*Strategy)(const Node &);
 
 class StrategyChooser {
-	vector<pair<Float, unique_ptr<Strategy> > > p_strats;
+	vector<pair<Float, Strategy> > p_strats;
 public:
 	StrategyChooser(Float probs[], size_t n_probs);
-	Strategy &random_strat();
+	Strategy random_strat(size_t &i);
 	void update_probabilities(Float probs[], size_t n_probs);
 };
 
-struct StrategyRandom : public Strategy {
-	virtual Action act(const Node &from);
-};
-
-struct StrategyPig : public Strategy {
-public:
-	virtual Action act(const Node &from);
-};
+Action StrategyRandom(const Node &from);
+Action StrategyPig(const Node &from);

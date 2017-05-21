@@ -9,7 +9,7 @@ import datetime
 import numpy as np
 
 from common import ENV_AGENT_NAMES
-#from evaluation import PigChaseEvaluator
+from evaluation import PigChaseEvaluator
 from environment import PigChaseSymbolicStateBuilder
 from malmopy.agent import RandomAgent, BaseAgent
 from malmopy.visualization import ConsoleVisualizer
@@ -41,18 +41,15 @@ class BayesAgent(BaseAgent):
 
         if self._prev_state is not None:
             self.bp.infer_strategy_proba(self._prev_state, cur_state)
-            if cur_state[:2] != self._prev_state[:2]:
-                print("The pig moved!", cur_state[:2], self._prev_state[:2])
         self.cumul_reward += reward
         if done:
-            print("Real reward:", self.cumul_reward)
+            print("Final strats:", self.bp._strats, "Real reward:", self.cumul_reward)
             self.cumul_reward = 0
             self._prev_state = None
             self.bp.reset(self.PRIORS)
         else:
             self._prev_state = cur_state
-        print("Strats:", self.bp._strats)
-        return self.bp.plan_best_action(cur_state, budget=1000, exploration_constant=2.0)
+        return self.bp.plan_best_action(cur_state, budget=500, exploration_constant=2.0)
 
     @staticmethod
     def log_dir(args, date):
