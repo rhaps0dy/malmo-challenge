@@ -30,6 +30,7 @@ from six.moves import range
 from malmopy.agent import AStarAgent
 from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent
+import bayes_agent
 
 P_FOCUSED = .75
 CELL_WIDTH = 33
@@ -189,6 +190,10 @@ class PigChaseHumanAgent(GuiAgent):
         self._quit_event = quit
         super(PigChaseHumanAgent, self).__init__(name, environment, keymap,
                                                  visualizer=visualizer)
+        self._ba = bayes_agent.BayesAgent(name, 3)
+        #self._observation = self._env.reset()
+        self._reward = 0
+        self._done = True
 
     def _build_layout(self, root):
         # Left part of the GUI, first person view
@@ -274,7 +279,7 @@ class PigChaseHumanAgent(GuiAgent):
         # build symbolic view
         board = None
         if self._env is not None:
-            board, _ = self._env._internal_symbolic_builder.build(self._env)
+            board, _ = self._observation = self._env._internal_symbolic_builder.build(self._env)
         if board is not None:
             board = board.T
             self._symbolic_view.delete('all')  # Remove all previous items from Tkinter tracking
@@ -407,12 +412,14 @@ class PigChaseHumanAgent(GuiAgent):
 
         if self._episode_has_started and time.time() - self._episode_start_time >= 3:
             if e.keysym in self._keymap:
-                mapped_action = self._keymap.index(e.keysym)
+                #mapped_action = self._keymap.index(e.keysym)
+                ba_map = [2, 3, 1]
+                mapped_action = ba_map[self._ba.act(self._observation, self._reward, self._done)]
 
-                _, reward, done = self._env.do(mapped_action)
+                self._observation, self._reward, self._done = self._env.do(mapped_action)
                 self._action_taken += 1
-                self._rewards.append(reward)
-                self._on_experiment_updated(mapped_action, reward, done)
+                self._rewards.append(self._reward)
+                self._on_experiment_updated(mapped_action, self._reward, self._done)
 
     def _on_episode_start(self):
         self._episode_has_ended = False
