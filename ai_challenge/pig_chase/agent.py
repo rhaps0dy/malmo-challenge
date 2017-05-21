@@ -30,7 +30,6 @@ from six.moves import range
 from malmopy.agent import AStarAgent
 from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent
-import bayes_agent
 
 P_FOCUSED = .75
 CELL_WIDTH = 33
@@ -414,7 +413,9 @@ class PigChaseHumanAgent(GuiAgent):
             if e.keysym in self._keymap:
                 #mapped_action = self._keymap.index(e.keysym)
                 ba_map = [2, 3, 1]
-                mapped_action = ba_map[self._ba.act(self._observation, self._reward, self._done)]
+                _action = self._ba.act(self._observation, self._reward, self._done)
+                mapped_action = ba_map[_action]
+                print "Taken action", _action
 
                 self._observation, self._reward, self._done = self._env.do(mapped_action)
                 self._action_taken += 1

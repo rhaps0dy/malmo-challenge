@@ -10,7 +10,7 @@ set(CONCAT_CXX_FILES node.cpp uct.cpp strategy.cpp path_cache.cpp)
 
 #CXXFLAGS
 set(CMAKE_CXX_FLAGS_DEBUG  "-g -D_GLIBCXX_DEBUG -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG -DNPROFILE")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -D_GLIBCXX_DEBUG")
 add_definitions(-std=c++14)
 

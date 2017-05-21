@@ -66,11 +66,11 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 }
 
 static Action
-default_policy_action(const Node& node, const int option) {
+default_policy_action(const Node& node, const size_t option) {
     if (option == 0) {
-        return static_cast<Action>(PathCache::data<0, OBJECTIVE_EXIT, TYPE_ACTION>(node));
-    } else {
         return static_cast<Action>(PathCache::data<0, OBJECTIVE_CORNER_PIG, TYPE_ACTION>(node));
+    } else {
+        return static_cast<Action>(PathCache::data<0, OBJECTIVE_EXIT, TYPE_ACTION>(node));
 	}
 }
 
@@ -82,16 +82,14 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 	static vector<Float*> values;
 	values.clear();
 
+	// Whether the default policy involves going to the exit or to the pig
+	size_t option_default;
 	// A strategy (aka a policy) that the other agent takes, drawn from its
 	// strategy mix
-	Strategy &strategy = sc.random_strat();
-	strategy.reset();
+	Strategy strategy = sc.random_strat(option_default);
 
 	// Whether our agent takes the tree policy or the default policy.
 	bool using_default_policy = false;
-
-	// Whether the default policy involves going to the exit or to the pig
-	const int option_default = Random::uniform_int<int>(1);
 
 	while(!current.is_final) {
 		if(current.t%2 == 0) {
@@ -125,7 +123,7 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 		} else {
 			// Turn for the other agent, it takes an action according to its
 			// policy
-			const Action a = strategy.act(current);
+			const Action a = strategy(current);
 			current.make_child(a, true);
 		}
 	}
