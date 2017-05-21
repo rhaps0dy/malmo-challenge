@@ -51,6 +51,7 @@ class BayesAgent(BaseAgent):
             self.bp.reset(self.PRIORS)
         else:
             self._prev_state = cur_state
+        print("Strats:", self.bp._strats)
         return self.bp.plan_best_action(cur_state, budget=1000, exploration_constant=2.0)
 
     @staticmethod

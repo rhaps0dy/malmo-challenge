@@ -193,7 +193,7 @@ class PigChaseHumanAgent(GuiAgent):
         self._ba = bayes_agent.BayesAgent(name, 3)
         #self._observation = self._env.reset()
         self._reward = 0
-        self._done = True
+        self._done = False
 
     def _build_layout(self, root):
         # Left part of the GUI, first person view
