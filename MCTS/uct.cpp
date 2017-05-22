@@ -121,6 +121,7 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 
 			current.make_child(best_a, false);
 		} else {
+			current.print();
 			// Turn for the other agent, it takes an action according to its
 			// policy
 			const Action a = strategy(current);
@@ -132,6 +133,7 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 	const Float value = static_cast<Float>(current.value) / static_cast<Float>(current.t/2);
 	for(auto v: values)
 		(*v) += value;
+	getchar();
 }
 
 Action uct_best_action(Node &root, int budget,
