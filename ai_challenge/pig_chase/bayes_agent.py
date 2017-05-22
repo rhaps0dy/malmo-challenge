@@ -52,15 +52,20 @@ class BayesAgent(BaseAgent):
         return self.bp.plan_best_action(cur_state, budget=500, exploration_constant=2.0)
 
     @staticmethod
-    def log_dir(args, date):
-        return os.path.join(args.log_dir, date)
+    def log_dir(args, dtime):
+        return 'results/ours/%s'.format(dtime)
 
+class BayesAgentWrapper(BayesAgent):
+    EPOCH_SIZE = 100
+    StateBuilder = PigChaseSymbolicStateBuilder
+    def __init__(self, name, actions, pig, visualizer, device):
+        super(BayesAgentWrapper, self).__init__(name, actions, visualizer)
 
 if __name__ == '__main__':
     arg_parser = ArgumentParser('Bayesian inference and planning agent evaluation')
     arg_parser.add_argument('-a', '--agent', type=str, default='BayesAgent',
                             help='Agent class to use')
-    arg_parser.add_argument('-l', '--log-dir', type=str, default='./logs/bp',
+    arg_parser.add_argument('-l', '--log-dir', type=str, default='logs/bp',
                             help='Directory to store logs in')
     args = arg_parser.parse_args()
     clients = [('127.0.0.1', 10000), ('127.0.0.1', 10001)]

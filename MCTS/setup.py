@@ -15,5 +15,5 @@ setup(
                            define_macros=[('NDEBUG', '1'),
                                           ('NPROFILE', '1'),
                                           ('NHAVE_MAIN', '1')],
-                           extra_compile_args=['-O3', '-flto', '-std=c++14'],
+                           extra_compile_args=['-O3', '-flto', '-std=c++11'],
                            extra_link_args=['-O3', '-flto'],)])
