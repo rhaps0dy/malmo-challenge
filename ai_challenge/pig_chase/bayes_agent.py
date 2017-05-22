@@ -9,10 +9,13 @@ import datetime
 import numpy as np
 
 from common import ENV_AGENT_NAMES
-from evaluation import PigChaseEvaluator
 from environment import PigChaseSymbolicStateBuilder
 from malmopy.agent import RandomAgent, BaseAgent
-from malmopy.visualization import ConsoleVisualizer
+try:
+    from malmopy.visualization.tensorboard import TensorboardVisualizer
+except ImportError:
+    print('Cannot import tensorboard, using ConsoleVisualizer.')
+    from malmopy.visualization import ConsoleVisualizer
 
 import tsearch
 
@@ -24,36 +27,52 @@ class BayesAgent(BaseAgent):
 
         self._prev_state = None
         self.bp.reset(self.PRIORS)
+
         self.cumul_reward = 0
+        self._prev_pig_location = None
+        self._done_pig_location = None
 
     def act(self, symbolic_state, reward, done, is_training=False):
-        cur_state = [None]*8
-        for entity in symbolic_state[1]:
-            if entity['name'] == 'Pig':
-                cur_state[0] = int(entity['z'])
-                cur_state[1] = int(entity['x'])
-            else:
-                i = (int(entity['name'][-1])-1)*3
-                cur_state[i+2] = int(entity['z'])
-                cur_state[i+3] = int(entity['x'])
-                # Minecraft yaw to 0=north, 1=east.. taken from agent.py
-                cur_state[i+4] = ((((int(entity['yaw']) - 45) % 360) // 90) - 1) % 4
+        if symbolic_state is None:
+            cur_state = self._prev_state
+            # But still, why? It does not make sense, we need the next step's observation
+            assert done, "We should receive no observation only maybe in the last step"
+            self._prev_state = None
+        else:
+            cur_state = [None]*8
+            for entity in symbolic_state[1]:
+                if entity['name'] == 'Pig':
+                    cur_state[0] = int(entity['z'])
+                    cur_state[1] = int(entity['x'])
+                    location = (entity['z'], entity['x'])
+                    if location == self._prev_pig_location and location != self._done_pig_location:
+                        print("Pig location:", location)
+                        self._done_pig_location = location
+                    self._prev_pig_location = location
+                else:
+                    i = (int(entity['name'][-1])-1)*3
+                    cur_state[i+2] = int(entity['z'])
+                    cur_state[i+3] = int(entity['x'])
+                    # Minecraft yaw to 0=north, 1=east.. taken from agent.py
+                    cur_state[i+4] = ((((int(entity['yaw']) - 45) % 360) // 90) - 1) % 4
 
-        if self._prev_state is not None:
-            self.bp.infer_strategy_proba(self._prev_state, cur_state)
+            if self._prev_state is not None:
+                if None in cur_state:
+                    assert done, "We should receive a partial observation only maybe in the last step"
+                else:
+                    self.bp.infer_strategy_proba(self._prev_state, cur_state)
+            self._prev_state = cur_state
+
         self.cumul_reward += reward
         if done:
             print("Final strats:", self.bp._strats, "Real reward:", self.cumul_reward)
             self.cumul_reward = 0
-            self._prev_state = None
             self.bp.reset(self.PRIORS)
-        else:
-            self._prev_state = cur_state
-        return self.bp.plan_best_action(cur_state, budget=500, exploration_constant=2.0)
+        return self.bp.plan_best_action(cur_state, budget=5000, exploration_constant=2.0)
 
     @staticmethod
     def log_dir(args, dtime):
-        return 'results/ours/%s'.format(dtime)
+        return 'results/ours/{:s}'.format(dtime)
 
 class BayesAgentWrapper(BayesAgent):
     EPOCH_SIZE = 100
@@ -62,6 +81,7 @@ class BayesAgentWrapper(BayesAgent):
         super(BayesAgentWrapper, self).__init__(name, actions, visualizer)
 
 if __name__ == '__main__':
+    from evaluation import PigChaseEvaluator
     arg_parser = ArgumentParser('Bayesian inference and planning agent evaluation')
     arg_parser.add_argument('-a', '--agent', type=str, default='BayesAgent',
                             help='Agent class to use')
