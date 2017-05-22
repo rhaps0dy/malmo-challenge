@@ -26,13 +26,12 @@ static unordered_map<NodeSeri, array<Float, N_ACTIONS> > _value_sum;
 static Action
 tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 				   array<Float, N_ACTIONS> &value_sum, const Float constant,
-				   bool &action_never_taken) {
+				   bool &action_never_taken, size_t _n_actions) {
 	size_t n_best=0;
 	Action best[N_ACTIONS];
 	Float max_val = -INFINITY;
 
-	action_never_taken = true;
-	for(size_t i=0; i<N_ACTIONS; i++) {
+	for(size_t i=0; i<_n_actions; i++) {
 		if(n_visits[i] == 0) {
 			// Is there an action that has never been taken?
 			if(!isnan(max_val)) {
@@ -68,7 +67,7 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 
 static Action
 default_policy_action(const Node& node, const size_t option) {
-    if (option == 0 && PIG_TRAPPABLE[node.pig.y][node.pig.x]) {
+    if (option == 0) {
         return static_cast<Action>(PathCache::data<0, OBJECTIVE_CORNER_PIG, TYPE_ACTION>(node));
     } else {
         return static_cast<Action>(PathCache::data<0, OBJECTIVE_EXIT, TYPE_ACTION>(node));
@@ -92,6 +91,8 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 	// Whether our agent takes the tree policy or the default policy.
 	bool using_default_policy = false;
 
+	size_t depth=0;
+	size_t _n_actions = N_ACTIONS;
 	while(!current.is_final) {
 		if(current.t%2 == 0) {
 			// Get key of this node in the _n_visits and _value_sum maps. Then
@@ -106,11 +107,20 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 			// policy.
 			// This also modifies the `using_default_policy` variable, to set it
 			// to `true` if the tree policy should finish.
-			const Action best_a =
+			if(depth == 3) {
+				_n_actions = 2;
+			}
+			Action best_a =
 				(using_default_policy ?
 				 default_policy_action(current, option_default) :
 				 tree_policy_action(n_visits, value_sum, constant,
-									using_default_policy));
+									using_default_policy, _n_actions));
+			if(depth == 3) {
+				using_default_policy = true;
+				option_default = static_cast<size_t>(best_a);
+				best_a = default_policy_action(current, option_default);
+			}
+			depth++;
 
 			// Record this ancestor's <node, value> pair for later backup
 			values.push_back(&value_sum[best_a]);
@@ -159,7 +169,7 @@ Action uct_best_action(Node &root, int budget,
 	auto a = _n_visits.find(root_seri);
 	auto b = _value_sum.find(root_seri);
 	bool _dummy;
-	return tree_policy_action(a->second, b->second, 0.0, _dummy);
+	return tree_policy_action(a->second, b->second, 0.0, _dummy, N_ACTIONS);
 }
 #undef TIME_SERIALIZATION
 
