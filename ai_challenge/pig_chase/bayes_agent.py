@@ -29,14 +29,13 @@ class BayesAgent(BaseAgent):
         self.bp.reset(self.PRIORS)
 
         self.cumul_reward = 0
+        self.n_steps = 0
         self._prev_pig_location = None
         self._done_pig_location = None
 
     def act(self, symbolic_state, reward, done, is_training=False):
         if symbolic_state is None:
             cur_state = self._prev_state
-            # But still, why? It does not make sense, we need the next step's observation
-            assert done, "We should receive no observation only maybe in the last step"
             self._prev_state = None
         else:
             cur_state = [None]*8
@@ -57,7 +56,6 @@ class BayesAgent(BaseAgent):
                     cur_state[i+4] = ((((int(entity['yaw']) - 45) % 360) // 90) - 1) % 4
 
             if None in cur_state:
-                assert done, "We should receive a partial observation only maybe in the last step"
                 for i in xrange(len(cur_state)):
                     if cur_state[i] is None:
                         cur_state[i] = self._prev_state[i]
@@ -66,11 +64,13 @@ class BayesAgent(BaseAgent):
             self._prev_state = cur_state
 
         self.cumul_reward += reward
+        self.n_steps += 1
         if done:
-            print("Final strats:", self.bp._strats, "Real reward:", self.cumul_reward)
+            print("Final strats:", self.bp._strats, "Real reward:", self.cumul_reward/self.n_steps)
             self.cumul_reward = 0
+            self.n_steps = 0
             self.bp.reset(self.PRIORS)
-        return self.bp.plan_best_action(cur_state, budget=5000, exploration_constant=2.0)
+        return self.bp.plan_best_action(cur_state, budget=500, exploration_constant=2.0)
 
     @staticmethod
     def log_dir(args, dtime):
