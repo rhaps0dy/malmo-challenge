@@ -62,7 +62,8 @@ class BayesianPlanner:
     def infer_strategy_proba(self, prev_state, cur_state):
         # Focused
         if (self._focused_costs[tuple(prev_state[:2] + cur_state[2:5])] <
-            self._focused_costs[tuple(prev_state[:5])]):
+            self._focused_costs[tuple(prev_state[:5])]) or (
+                    abs(prev_state[2]-prev_state[0])+abs(prev_state[3]-prev_state[1]) == 1):
             self._strats[0] *= 0.98
         else:
             self._strats[0] *= 0.01
