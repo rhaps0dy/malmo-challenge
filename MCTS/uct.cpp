@@ -68,7 +68,7 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 
 static Action
 default_policy_action(const Node& node, const size_t option) {
-    if (option == 0) {
+    if (option == 0 && PIG_TRAPPABLE[node.pig.y][node.pig.x]) {
         return static_cast<Action>(PathCache::data<0, OBJECTIVE_CORNER_PIG, TYPE_ACTION>(node));
     } else {
         return static_cast<Action>(PathCache::data<0, OBJECTIVE_EXIT, TYPE_ACTION>(node));
