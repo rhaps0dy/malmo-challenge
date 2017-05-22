@@ -55,7 +55,7 @@ class PigChaseEvaluator(object):
         assert experiment_name is not None, 'experiment_name cannot be None'
 
         from json import dump
-        from os.path import exists, join, pardir, abspath
+        from os.path import exists, join, dirname, abspath
         from os import makedirs
         from numpy import mean, var
 
@@ -69,7 +69,7 @@ class PigChaseEvaluator(object):
 
         try:
             filepath = abspath(filepath)
-            parent = join(pardir, filepath)
+            parent = dirname(filepath)
             if not exists(parent):
                 makedirs(parent)
 

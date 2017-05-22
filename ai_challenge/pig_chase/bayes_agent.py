@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 import pickle
 import sys
 import os
+import os.path
 import datetime
 import numpy as np
 
@@ -110,5 +111,5 @@ if __name__ == '__main__':
     agent = AgentClass(ENV_AGENT_NAMES[1], 3, args, visualizer=visualizer)
     eval = PigChaseEvaluator(clients, agent, agent, PigChaseSymbolicStateBuilder())
     eval.run()
-    name = 'experiment_{:d}_{:f}'.format(args.budget, args.exploration_constant)
-    eval.save(name, name+'.json')
+    name = 'UCT_budget_{:d}_exploration_{:.2f}'.format(args.budget, args.exploration_constant)
+    eval.save(name, os.path.join('experiments', name+'.json'))
