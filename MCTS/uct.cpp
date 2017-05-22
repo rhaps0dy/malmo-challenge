@@ -31,6 +31,7 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 	Action best[N_ACTIONS];
 	Float max_val = -INFINITY;
 
+	action_never_taken = true;
 	for(size_t i=0; i<N_ACTIONS; i++) {
 		if(n_visits[i] == 0) {
 			// Is there an action that has never been taken?
