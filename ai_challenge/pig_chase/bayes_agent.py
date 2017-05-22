@@ -7,6 +7,7 @@ import sys
 import os
 import os.path
 import datetime
+import collections
 import numpy as np
 
 from common import ENV_AGENT_NAMES
@@ -45,12 +46,15 @@ class BayesAgent(BaseAgent):
                                             [0,0,1,1,0,1,1,0,0],
                                             [0,0,0,0,0,0,0,0,0]], dtype=np.bool)
 
+        self.pig_movements = collections.defaultdict(lambda: [], {})
+
     def act(self, symbolic_state, reward, done, is_training=False):
         if symbolic_state is None:
             cur_state = self._prev_state
             self._prev_state = None
         else:
             cur_state = [None]*8
+            location = None
             for entity in symbolic_state[1]:
                 if entity['name'] == 'Pig':
                     cur_state[0] = int(entity['z'])
@@ -59,7 +63,8 @@ class BayesAgent(BaseAgent):
                     if location == self._prev_pig_location and location != self._done_pig_location:
                         print("Pig location:", location)
                         self._done_pig_location = location
-                    self._prev_pig_location = location
+                    # Uncomment if not recording pig movements
+                    # self._prev_pig_location = location
                 else:
                     i = (int(entity['name'][-1])-1)*3
                     cur_state[i+2] = int(entity['z'])
@@ -75,6 +80,12 @@ class BayesAgent(BaseAgent):
                 self.bp.infer_strategy_proba(self._prev_state, cur_state)
             self._prev_state = cur_state
 
+            ## Record the pig's movements
+            if location is not None:
+                if self._prev_pig_location is not None:
+                    self.pig_movements[tuple(cur_state[:4] + cur_state[5:7])].append((location[0]-self._prev_pig_location[0], location[1]-self._prev_pig_location[1]))
+                self._prev_pig_location = location
+
         self.cumul_reward += reward
         self.n_steps += 1
         if done:
@@ -83,11 +94,7 @@ class BayesAgent(BaseAgent):
             self.n_steps = 0
             self.bp.reset(self.PRIORS)
         print(self.bp._strats)
-        if not self.pig_can_be_trapped[tuple(cur_state[:2])]:
-            budget = 100000
-        else:
-            budget = self.budget
-        return self.bp.plan_best_action(cur_state, budget=budget, exploration_constant=self.exploration_constant)
+        return self.bp.plan_best_action(cur_state, budget=self.budget, exploration_constant=self.exploration_constant)
 
     @staticmethod
     def log_dir(args, dtime):
@@ -97,7 +104,10 @@ class BayesAgentWrapper(BayesAgent):
     EPOCH_SIZE = 100
     StateBuilder = PigChaseSymbolicStateBuilder
     def __init__(self, name, actions, pig, visualizer, device):
-        super(BayesAgentWrapper, self).__init__(name, actions, visualizer)
+        class Args:
+            budget = 1000
+            exploration_constant = 10.0
+        super(BayesAgentWrapper, self).__init__(name, actions, Args(), visualizer)
 
 if __name__ == '__main__':
     from evaluation import PigChaseEvaluator
