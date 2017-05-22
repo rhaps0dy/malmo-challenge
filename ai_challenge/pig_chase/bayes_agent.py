@@ -37,6 +37,14 @@ class BayesAgent(BaseAgent):
         self.budget = args.budget
         self.exploration_constant = args.exploration_constant
 
+        self.pig_can_be_trapped = np.array([[0,0,0,0,0,0,0,0,0],
+                                            [0,0,1,1,0,1,1,0,0],
+                                            [0,0,1,0,1,0,1,0,0],
+                                            [0,1,1,1,0,1,1,1,0],
+                                            [0,0,1,0,1,0,1,0,0],
+                                            [0,0,1,1,0,1,1,0,0],
+                                            [0,0,0,0,0,0,0,0,0]], dtype=np.bool)
+
     def act(self, symbolic_state, reward, done, is_training=False):
         if symbolic_state is None:
             cur_state = self._prev_state
@@ -75,7 +83,11 @@ class BayesAgent(BaseAgent):
             self.n_steps = 0
             self.bp.reset(self.PRIORS)
         print(self.bp._strats)
-        return self.bp.plan_best_action(cur_state, budget=self.budget, exploration_constant=self.exploration_constant)
+        if not self.pig_can_be_trapped[tuple(cur_state[:2])]:
+            budget = 100000
+        else:
+            budget = self.budget
+        return self.bp.plan_best_action(cur_state, budget=budget, exploration_constant=self.exploration_constant)
 
     @staticmethod
     def log_dir(args, dtime):
