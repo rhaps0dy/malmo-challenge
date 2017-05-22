@@ -64,7 +64,7 @@ class BayesAgent(BaseAgent):
                         print("Pig location:", location)
                         self._done_pig_location = location
                     # Uncomment if not recording pig movements
-                    # self._prev_pig_location = location
+                    self._prev_pig_location = location
                 else:
                     i = (int(entity['name'][-1])-1)*3
                     cur_state[i+2] = int(entity['z'])
@@ -81,10 +81,10 @@ class BayesAgent(BaseAgent):
             self._prev_state = cur_state
 
             ## Record the pig's movements
-            if location is not None:
-                if self._prev_pig_location is not None:
-                    self.pig_movements[tuple(cur_state[:4] + cur_state[5:7])].append((location[0]-self._prev_pig_location[0], location[1]-self._prev_pig_location[1]))
-                self._prev_pig_location = location
+            #if location is not None:
+            #    if self._prev_pig_location is not None:
+            #        self.pig_movements[tuple(cur_state[:4] + cur_state[5:7])].append((location[0]-self._prev_pig_location[0], location[1]-self._prev_pig_location[1]))
+            #    self._prev_pig_location = location
 
         self.cumul_reward += reward
         self.n_steps += 1
@@ -94,7 +94,11 @@ class BayesAgent(BaseAgent):
             self.n_steps = 0
             self.bp.reset(self.PRIORS)
         print(self.bp._strats)
-        return self.bp.plan_best_action(cur_state, budget=self.budget, exploration_constant=self.exploration_constant)
+        if self.pig_can_be_trapped[tuple(cur_state[:2])]:
+            budget = self.budget
+        else:
+            budget = 20000
+        return self.bp.plan_best_action(cur_state, budget=budget, exploration_constant=self.exploration_constant)
 
     @staticmethod
     def log_dir(args, dtime):
