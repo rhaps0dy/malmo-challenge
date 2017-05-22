@@ -190,7 +190,10 @@ class PigChaseHumanAgent(GuiAgent):
         self._quit_event = quit
         super(PigChaseHumanAgent, self).__init__(name, environment, keymap,
                                                  visualizer=visualizer)
-        self._ba = bayes_agent.BayesAgent(name, 3)
+        class Args:
+            budget = 1000
+            exploration_constant = 10.0
+        self._ba = bayes_agent.BayesAgent(name, 3, Args())
         #self._observation = self._env.reset()
         self._reward = 0
         self._done = False

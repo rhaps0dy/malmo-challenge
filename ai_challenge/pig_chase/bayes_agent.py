@@ -21,7 +21,8 @@ except ImportError:
 import tsearch
 
 class BayesAgent(BaseAgent):
-    PRIORS = np.array([0.75, 0.25])
+    #PRIORS = np.array([0.75, 0.25])
+    PRIORS = np.array([1., 0.])
     def __init__(self, name, n_actions, args, visualizer=None):
         super(BayesAgent, self).__init__(name, n_actions, visualizer)
         self.bp = tsearch.BayesianPlanner()
@@ -74,7 +75,7 @@ class BayesAgent(BaseAgent):
             self.cumul_reward = 0
             self.n_steps = 0
             self.bp.reset(self.PRIORS)
-        print(self.bp._strats)
+        print("Prob. focused:", self.bp._strats[0], "Prob. random:", self.bp._strats[1])
         return self.bp.plan_best_action(cur_state, budget=self.budget, exploration_constant=self.exploration_constant)
 
     @staticmethod
