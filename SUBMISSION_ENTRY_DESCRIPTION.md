@@ -11,3 +11,6 @@ Since there are only 4ms between two game ticks, is essential that this part be 
 
 ## Installation
 In your normal malmo-challenge environment, and from the repository root. Run `pip install --upgrade ./MCTS` to install our C++ module. From the `pig_chase` directory, run `python bayes_agent.py -b 1000 -c 10.0` 
+
+## Video Link
+Click in this [link](https://www.dropbox.com/sh/ngm5fnsx04gwoa5/AABgrn8_W3PY-9g2gziqypRza?dl=0) to download the video. 
