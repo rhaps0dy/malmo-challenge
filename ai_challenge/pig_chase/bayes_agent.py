@@ -21,7 +21,7 @@ import tsearch
 
 class BayesAgent(BaseAgent):
     PRIORS = np.array([0.75, 0.25])
-    def __init__(self, name, n_actions, visualizer=None):
+    def __init__(self, name, n_actions, args, visualizer=None):
         super(BayesAgent, self).__init__(name, n_actions, visualizer)
         self.bp = tsearch.BayesianPlanner()
 
@@ -32,6 +32,9 @@ class BayesAgent(BaseAgent):
         self.n_steps = 0
         self._prev_pig_location = None
         self._done_pig_location = None
+
+        self.budget = args.budget
+        self.exploration_constant = args.exploration_constant
 
     def act(self, symbolic_state, reward, done, is_training=False):
         if symbolic_state is None:
@@ -71,7 +74,7 @@ class BayesAgent(BaseAgent):
             self.n_steps = 0
             self.bp.reset(self.PRIORS)
         print(self.bp._strats)
-        return self.bp.plan_best_action(cur_state, budget=1000, exploration_constant=20.0)
+        return self.bp.plan_best_action(cur_state, budget=self.budget, exploration_constant=self.exploration_constant)
 
     @staticmethod
     def log_dir(args, dtime):
@@ -90,6 +93,10 @@ if __name__ == '__main__':
                             help='Agent class to use')
     arg_parser.add_argument('-l', '--log-dir', type=str, default='logs/bp',
                             help='Directory to store logs in')
+    arg_parser.add_argument('-c', '--exploration-constant', type=float, default=20.0,
+                            help='UCT exploration constant')
+    arg_parser.add_argument('-b', '--budget', type=int, default=1000,
+                            help='UCT simulation budget')
     args = arg_parser.parse_args()
     clients = [('127.0.0.1', 10000), ('127.0.0.1', 10001)]
 
@@ -100,6 +107,8 @@ if __name__ == '__main__':
         visualizer.initialize(logdir, None)
     else:
         visualizer = ConsoleVisualizer()
-    agent = AgentClass(ENV_AGENT_NAMES[1], 3, visualizer=visualizer)
+    agent = AgentClass(ENV_AGENT_NAMES[1], 3, args, visualizer=visualizer)
     eval = PigChaseEvaluator(clients, agent, agent, PigChaseSymbolicStateBuilder())
     eval.run()
+    name = 'experiment_{:d}_{:f}'.format(args.budget, args.exploration_constant)
+    eval.save(name, name+'.json')
