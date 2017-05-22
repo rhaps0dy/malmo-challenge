@@ -129,7 +129,7 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 	}
 	// Backup rule: value is the reward obtained in the leaf. Then we go up
 	// through this leaf's ancestors and we add the value to them.
-	const Float value = static_cast<Float>(current.value + 25) / 50.;
+	const Float value = static_cast<Float>(current.value) / static_cast<Float>(current.t/2);
 	for(auto v: values)
 		(*v) += value;
 }

@@ -32,6 +32,8 @@ void Node::check_if_final() {
 }
 
 bool Node::pig_trapped() const {
+	if(pig.y == 3 && ps[0].y == 3 && ((pig.x == 2 && ps[0].x == 2) || (pig.x == 8 && ps[0].x == 8)))
+		return true;
 	for(size_t i=0; i<4; i++) {
 		const int y = pig.y + PIG_AROUND_OFFSETS[i][1];
 		const int x = pig.x + PIG_AROUND_OFFSETS[i][0];

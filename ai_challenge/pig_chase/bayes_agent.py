@@ -70,7 +70,8 @@ class BayesAgent(BaseAgent):
             self.cumul_reward = 0
             self.n_steps = 0
             self.bp.reset(self.PRIORS)
-        return self.bp.plan_best_action(cur_state, budget=500, exploration_constant=2.0)
+        print(self.bp._strats)
+        return self.bp.plan_best_action(cur_state, budget=1000, exploration_constant=20.0)
 
     @staticmethod
     def log_dir(args, dtime):

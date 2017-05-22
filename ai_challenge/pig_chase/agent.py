@@ -30,6 +30,7 @@ from six.moves import range
 from malmopy.agent import AStarAgent
 from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent
+import bayes_agent
 
 P_FOCUSED = .75
 CELL_WIDTH = 33
