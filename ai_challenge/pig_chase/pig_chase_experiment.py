@@ -19,6 +19,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from datetime import datetime
+import pickle
 
 import six
 from os import path
@@ -89,6 +90,10 @@ def agent_factory(name, role, AgentClass, clients, max_epochs,
 
         max_training_steps = AgentClass.EPOCH_SIZE * max_epochs
         for step in six.moves.range(1, max_training_steps+1):
+            if step % 10000 == 0:
+                print("Saving {:d}".format(step))
+                with open('pig_{:d}.pkl'.format(step), 'wb') as f:
+                    pickle.dump(dict(agent.pig_movements), f)
 
             # check if env needs reset
             if env.done:
