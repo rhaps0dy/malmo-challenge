@@ -68,12 +68,14 @@ tree_policy_action(std::array<int, N_ACTIONS+1> &n_visits,
 static Action
 default_policy_action(const Node& node, const size_t option) {
     if (option == 0) {
+		cout << "cornering pig\n";
         return static_cast<Action>(PathCache::data<0, OBJECTIVE_CORNER_PIG, TYPE_ACTION>(node));
     } else {
         return static_cast<Action>(PathCache::data<0, OBJECTIVE_EXIT, TYPE_ACTION>(node));
 	}
 }
 
+static bool stall=true;
 #define TIME_SERIALIZATION(node) (node.get_serialization()*(MAX_T+1) + node.t)
 static
 void simulate_path(Node current, Float constant, StrategyChooser &sc) {
@@ -121,7 +123,8 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 
 			current.make_child(best_a, false);
 		} else {
-			current.print();
+			if(stall)
+				current.print();
 			// Turn for the other agent, it takes an action according to its
 			// policy
 			const Action a = strategy(current);
@@ -133,7 +136,14 @@ void simulate_path(Node current, Float constant, StrategyChooser &sc) {
 	const Float value = static_cast<Float>(current.value) / static_cast<Float>(current.t/2);
 	for(auto v: values)
 		(*v) += value;
-	getchar();
+	if(stall) {
+		current.print();
+		cout << "Skip rest of simulations this turn? (y/n)" << endl;
+		char c;
+		cin >> c;
+		if(c=='y')
+			stall=false;
+	}
 }
 
 Action uct_best_action(Node &root, int budget,
@@ -169,6 +179,7 @@ Action ffi_best_action(int budget, Float c,
 					   int P_y, int P_x, int y1, int x1, Direction d1,
 					   int y0, int x0, Direction d0)
 {
+	stall=true;
 	static StrategyChooser sc(strat_probs, n_probs);
 	Node root(x0, y0, d0, x1, y1, d1, P_x, P_y);
 	sc.update_probabilities(strat_probs, n_probs);
