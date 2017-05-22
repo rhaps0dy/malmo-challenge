@@ -56,11 +56,13 @@ class BayesAgent(BaseAgent):
                     # Minecraft yaw to 0=north, 1=east.. taken from agent.py
                     cur_state[i+4] = ((((int(entity['yaw']) - 45) % 360) // 90) - 1) % 4
 
-            if self._prev_state is not None:
-                if None in cur_state:
-                    assert done, "We should receive a partial observation only maybe in the last step"
-                else:
-                    self.bp.infer_strategy_proba(self._prev_state, cur_state)
+            if None in cur_state:
+                assert done, "We should receive a partial observation only maybe in the last step"
+                for i in xrange(len(cur_state)):
+                    if cur_state[i] is None:
+                        cur_state[i] = self._prev_state[i]
+            elif self._prev_state is not None:
+                self.bp.infer_strategy_proba(self._prev_state, cur_state)
             self._prev_state = cur_state
 
         self.cumul_reward += reward
